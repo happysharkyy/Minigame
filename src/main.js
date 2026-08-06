@@ -1,4 +1,5 @@
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
+import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
 
 const GAME_MODES = {
   TETRIS: 'tetris',
@@ -79,132 +80,158 @@ const FRUIT_TYPES = [
 const GAME_LIBRARY = [
   {
     id: GAME_MODES.TETRIS,
-    title: '俄罗斯方块',
-    badge: '经典',
-    description: '抬手移动、旋转和加速，强调节奏与精确控制。',
-    tagline: '协调 · 中强度',
+    titleKey: 'lib.tetris.title',
+    badgeKey: 'lib.tetris.badge',
+    descKey: 'lib.tetris.desc',
+    taglineKey: 'lib.tetris.tagline',
     mode: GAME_MODES.TETRIS,
     priority: 90,
   },
   {
     id: GAME_MODES.FRUIT,
-    title: '切西瓜',
-    badge: '热门',
-    description: '快速挥臂切开水果，连续命中加分，注意避开炸弹。',
-    tagline: '爆发 · 高强度',
+    titleKey: 'lib.fruit.title',
+    badgeKey: 'lib.fruit.badge',
+    descKey: 'lib.fruit.desc',
+    taglineKey: 'lib.fruit.tagline',
     mode: GAME_MODES.FRUIT,
     priority: 100,
   },
   {
     id: GAME_MODES.STAR,
-    title: '星光接力',
-    badge: '舒缓',
-    description: '移动任意一只手进入光点并短暂停留，连续点亮星图。',
-    tagline: '伸展 · 低强度',
+    titleKey: 'lib.star.title',
+    badgeKey: 'lib.star.badge',
+    descKey: 'lib.star.desc',
+    taglineKey: 'lib.star.tagline',
     mode: GAME_MODES.STAR,
     priority: 80,
   },
   {
     id: GAME_MODES.GUARD,
-    title: '能量守门员',
-    badge: '新作',
-    description: '用双手挡住下落能量球，左右协作守住三格护盾。',
-    tagline: '反应 · 中强度',
+    titleKey: 'lib.guard.title',
+    badgeKey: 'lib.guard.badge',
+    descKey: 'lib.guard.desc',
+    taglineKey: 'lib.guard.tagline',
     mode: GAME_MODES.GUARD,
     priority: 92,
   },
   {
     id: 'rhythm',
-    title: '节奏击打',
-    badge: '下一款',
-    description: '跟随节拍击中四周飞来的光球，支持派对轮流挑战。',
-    tagline: '音乐 · 高强度',
+    titleKey: 'lib.rhythm.title',
+    badgeKey: 'lib.rhythm.badge',
+    descKey: 'lib.rhythm.desc',
+    taglineKey: 'lib.rhythm.tagline',
     priority: 70,
   },
   {
     id: 'wall',
-    title: '光墙闪避',
-    badge: '企划中',
-    description: '根据轮廓缺口摆出对应姿势，让全身穿过光墙。',
-    tagline: '全身 · 中强度',
+    titleKey: 'lib.wall.title',
+    badgeKey: 'lib.wall.badge',
+    descKey: 'lib.wall.desc',
+    taglineKey: 'lib.wall.tagline',
     priority: 65,
   },
   {
     id: 'boxing',
-    title: '体感拳击',
-    badge: '企划中',
-    description: '左右直拳、格挡与闪躲组成连招，适合双人积分赛。',
-    tagline: '竞技 · 高强度',
+    titleKey: 'lib.boxing.title',
+    badgeKey: 'lib.boxing.badge',
+    descKey: 'lib.boxing.desc',
+    taglineKey: 'lib.boxing.tagline',
     priority: 60,
   },
 ];
 
 const GAME_META = {
   [GAME_MODES.TETRIS]: {
-    name: '俄罗斯方块',
-    subtitle: '用简单抬手完成移动与旋转，动作确认后会有清晰反馈。',
-    panelTitle: '俄罗斯方块',
-    difficulty: '轻松上手',
-    metricOneLabel: '消除',
-    metricTwoLabel: '等级',
-    startTitle: '双手高举开始',
-    startHint: '左手抬高向左，右手抬高向右，双手高举旋转，双手下压加速。',
-    gestures: [
-      ['左手抬高', '向左移动'],
-      ['右手抬高', '向右移动'],
-      ['双手高举', '旋转方块'],
-      ['双手下压', '快速下落'],
+    nameKey: 'meta.tetris.name',
+    subtitleKey: 'meta.tetris.subtitle',
+    panelTitleKey: 'meta.tetris.panelTitle',
+    difficultyKey: 'meta.tetris.difficulty',
+    metricOneLabelKey: 'meta.tetris.metricOne',
+    metricTwoLabelKey: 'meta.tetris.metricTwo',
+    startTitleKey: 'meta.tetris.startTitle',
+    startHintKey: 'meta.tetris.startHint',
+    gestureKeys: [
+      ['meta.tetris.g1l', 'meta.tetris.g1a'],
+      ['meta.tetris.g2l', 'meta.tetris.g2a'],
+      ['meta.tetris.g3l', 'meta.tetris.g3a'],
+      ['meta.tetris.g4l', 'meta.tetris.g4a'],
     ],
   },
   [GAME_MODES.FRUIT]: {
-    name: '切西瓜',
-    subtitle: '45 秒爆发挑战，挥臂切水果，连斩加分，炸弹只扣分不出局。',
-    panelTitle: '切西瓜 · 45 秒挑战',
-    difficulty: '高能燃脂',
-    metricOneLabel: '切开',
-    metricTwoLabel: '倒计时',
-    startTitle: '双手高举开始',
-    startHint: '45 秒内尽量多切水果，炸弹会扣分但不会直接结束。',
-    gestures: [
-      ['左手挥切', '切开左侧水果加分'],
-      ['右手挥切', '切开右侧水果加分'],
-      ['双手快挥', '更容易打出连斩高分'],
-      ['切到炸弹', '扣分并打断连斩'],
+    nameKey: 'meta.fruit.name',
+    subtitleKey: 'meta.fruit.subtitle',
+    panelTitleKey: 'meta.fruit.panelTitle',
+    difficultyKey: 'meta.fruit.difficulty',
+    metricOneLabelKey: 'meta.fruit.metricOne',
+    metricTwoLabelKey: 'meta.fruit.metricTwo',
+    startTitleKey: 'meta.fruit.startTitle',
+    startHintKey: 'meta.fruit.startHint',
+    gestureKeys: [
+      ['meta.fruit.g1l', 'meta.fruit.g1a'],
+      ['meta.fruit.g2l', 'meta.fruit.g2a'],
+      ['meta.fruit.g3l', 'meta.fruit.g3a'],
+      ['meta.fruit.g4l', 'meta.fruit.g4a'],
     ],
   },
   [GAME_MODES.STAR]: {
-    name: '星光接力',
-    subtitle: '低强度伸展玩法，把任意一只手移动到光点内并短暂停留即可得分。',
-    panelTitle: '星光接力 · 舒缓挑战',
-    difficulty: '低强度友好',
-    metricOneLabel: '点亮',
-    metricTwoLabel: '倒计时',
-    startTitle: '双手高举，点亮星图',
-    startHint: '开局后把任意一只手移入光点，停留片刻即可点亮。',
-    gestures: [
-      ['左手靠近光点', '进入光圈'],
-      ['右手靠近光点', '进入光圈'],
-      ['短暂停留', '完成点亮'],
-      ['连续命中', '提升连击得分'],
+    nameKey: 'meta.star.name',
+    subtitleKey: 'meta.star.subtitle',
+    panelTitleKey: 'meta.star.panelTitle',
+    difficultyKey: 'meta.star.difficulty',
+    metricOneLabelKey: 'meta.star.metricOne',
+    metricTwoLabelKey: 'meta.star.metricTwo',
+    startTitleKey: 'meta.star.startTitle',
+    startHintKey: 'meta.star.startHint',
+    gestureKeys: [
+      ['meta.star.g1l', 'meta.star.g1a'],
+      ['meta.star.g2l', 'meta.star.g2a'],
+      ['meta.star.g3l', 'meta.star.g3a'],
+      ['meta.star.g4l', 'meta.star.g4a'],
     ],
   },
   [GAME_MODES.GUARD]: {
-    name: '能量守门员',
-    subtitle: '双手协作挡住下落能量球，漏球会损失护盾，但不会突然结束。',
-    panelTitle: '能量守门员 · 双手协作',
-    difficulty: '反应挑战',
-    metricOneLabel: '扑救',
-    metricTwoLabel: '护盾',
-    startTitle: '双手高举，守住能量门',
-    startHint: '移动左右手接住下落光球，漏接会损失一格护盾。',
-    gestures: [
-      ['移动左手', '封住左侧来球'],
-      ['移动右手', '封住右侧来球'],
-      ['双手分开', '扩大防守范围'],
-      ['保持入镜', '持续追踪双手'],
+    nameKey: 'meta.guard.name',
+    subtitleKey: 'meta.guard.subtitle',
+    panelTitleKey: 'meta.guard.panelTitle',
+    difficultyKey: 'meta.guard.difficulty',
+    metricOneLabelKey: 'meta.guard.metricOne',
+    metricTwoLabelKey: 'meta.guard.metricTwo',
+    startTitleKey: 'meta.guard.startTitle',
+    startHintKey: 'meta.guard.startHint',
+    gestureKeys: [
+      ['meta.guard.g1l', 'meta.guard.g1a'],
+      ['meta.guard.g2l', 'meta.guard.g2a'],
+      ['meta.guard.g3l', 'meta.guard.g3a'],
+      ['meta.guard.g4l', 'meta.guard.g4a'],
     ],
   },
 };
+
+function getLocalizedMeta(mode) {
+  const meta = GAME_META[mode];
+  return {
+    ...meta,
+    name: t(meta.nameKey),
+    subtitle: t(meta.subtitleKey),
+    panelTitle: t(meta.panelTitleKey),
+    difficulty: t(meta.difficultyKey),
+    metricOneLabel: t(meta.metricOneLabelKey),
+    metricTwoLabel: t(meta.metricTwoLabelKey),
+    startTitle: t(meta.startTitleKey),
+    startHint: t(meta.startHintKey),
+    gestures: meta.gestureKeys.map(([labelKey, actionKey]) => [t(labelKey), t(actionKey)]),
+  };
+}
+
+function getLocalizedLibrary() {
+  return GAME_LIBRARY.map((item) => ({
+    ...item,
+    title: t(item.titleKey),
+    badge: t(item.badgeKey),
+    description: t(item.descKey),
+    tagline: t(item.taglineKey),
+  }));
+}
 
 const video = document.querySelector('#camera');
 const poseCanvas = document.querySelector('#poseCanvas');
@@ -240,6 +267,22 @@ const gestureActions = [
   document.querySelector('#gestureAction3'),
   document.querySelector('#gestureAction4'),
 ];
+const difficultyLabel = document.querySelector('#difficultyLabel');
+const langBtn = document.querySelector('#langBtn');
+
+let lastCameraStatus = { key: null, params: null };
+let startupFailure = null;
+let overlayVisible = false;
+
+function setCameraStatus(key, params) {
+  lastCameraStatus = { key, params };
+  cameraStatus.textContent = params ? tf(key, params) : t(key);
+}
+
+function updateLangButton() {
+  if (!langBtn) return;
+  langBtn.textContent = getLang() === 'zh' ? 'EN' : '中文';
+}
 
 let poseLandmarker;
 let lastVideoTime = -1;
@@ -406,8 +449,8 @@ function spawnPiece() {
   if (collides(tetrisState.active.matrix, tetrisState.active.x, tetrisState.active.y)) {
     tetrisState.running = false;
     tetrisState.gameOver = true;
-    updateGameOverlay(true, '游戏结束', '双手高举重新开始，或者切换到切西瓜。');
-    gameStateBadge.textContent = '已结束';
+    updateGameOverlay(true, t('overlay.gameOver'), t('overlay.restartHintFruit'));
+    gameStateBadge.textContent = t('game.state.over');
   }
 }
 
@@ -500,9 +543,10 @@ function resetTetrisGame() {
   refillQueue();
   spawnPiece();
   updateHud();
-  updateGameOverlay(true, GAME_META[GAME_MODES.TETRIS].startTitle, GAME_META[GAME_MODES.TETRIS].startHint);
-  gameStateBadge.textContent = '准备中';
-  gestureValue.textContent = '等待识别';
+  const tetrisMeta = getLocalizedMeta(GAME_MODES.TETRIS);
+  updateGameOverlay(true, tetrisMeta.startTitle, tetrisMeta.startHint);
+  gameStateBadge.textContent = t('game.state.ready');
+  gestureValue.textContent = t('stats.waiting');
 }
 
 function startTetrisGame() {
@@ -514,7 +558,7 @@ function startTetrisGame() {
   tetrisState.gameOver = false;
   tetrisState.lastDropAt = performance.now();
   updateGameOverlay(false);
-  gameStateBadge.textContent = '游戏中';
+  gameStateBadge.textContent = t('game.state.playing');
 }
 
 function updateTetris(timestamp) {
@@ -593,9 +637,10 @@ function resetFruitGame() {
   fruitState.running = false;
   fruitState.gameOver = false;
   updateHud();
-  updateGameOverlay(true, GAME_META[GAME_MODES.FRUIT].startTitle, GAME_META[GAME_MODES.FRUIT].startHint);
-  gameStateBadge.textContent = '准备中';
-  gestureValue.textContent = '等待识别';
+  const fruitMeta = getLocalizedMeta(GAME_MODES.FRUIT);
+  updateGameOverlay(true, fruitMeta.startTitle, fruitMeta.startHint);
+  gameStateBadge.textContent = t('game.state.ready');
+  gestureValue.textContent = t('stats.waiting');
 }
 
 function startFruitGame() {
@@ -619,7 +664,7 @@ function startFruitGame() {
   fruitState.popups = [];
   updateHud();
   updateGameOverlay(false);
-  gameStateBadge.textContent = '计时中';
+  gameStateBadge.textContent = t('game.state.timer');
 }
 
 
@@ -628,8 +673,8 @@ function endFruitGame(title, hint) {
   fruitState.gameOver = true;
   fruitState.combo = 0;
   updateHud();
-  updateGameOverlay(true, title, `${hint} 双手高举重新开始，或者切换回俄罗斯方块。`);
-  gameStateBadge.textContent = '已结束';
+  updateGameOverlay(true, title, `${hint} ${t('overlay.restartBackHint')}`);
+  gameStateBadge.textContent = t('game.state.over');
 }
 
 function randomBetween(min, max) {
@@ -758,7 +803,7 @@ function spawnFruitWave(now) {
   scheduleNextFruitWave(now);
 }
 
-function spawnImpactWave(x, y, color, text = '') {
+function spawnImpactWave(x, y, color, text = '', isCombo = false) {
   fruitState.impacts.push({
     x,
     y,
@@ -774,6 +819,7 @@ function spawnImpactWave(x, y, color, text = '') {
       y: y - 18,
       text,
       color,
+      isCombo,
       vx: randomBetween(-14, 14),
       vy: randomBetween(-138, -112),
       life: FRUIT_POPUP_LIFE,
@@ -849,9 +895,10 @@ function sliceFruitTarget(target, now) {
   const bonus = 12 + Math.min(24, (fruitState.combo - 1) * 3);
   fruitState.score += bonus;
   fruitState.sliced += 1;
-  const popupText = fruitState.combo >= 2 ? `+${bonus} · ${fruitState.combo}连斩` : `+${bonus}`;
+  const isCombo = fruitState.combo >= 2;
+  const popupText = isCombo ? `+${bonus} · ${fruitState.combo} ${t('fruit.combo')}` : `+${bonus}`;
   spawnJuiceBurst(target.x, target.y, target.color, Math.max(18, target.radius * 0.78), 1.18);
-  spawnImpactWave(target.x, target.y, target.color, popupText);
+  spawnImpactWave(target.x, target.y, target.color, popupText, isCombo);
   updateHud();
 }
 
@@ -943,8 +990,12 @@ function updateFruitGame(timestamp) {
   if (fruitState.timeLeftMs <= 0) {
     fruitState.timeLeftMs = 0;
     endFruitGame(
-      '时间到',
-      `本局得分 ${fruitState.score}，切开 ${fruitState.sliced} 个水果，最高 ${fruitState.bestCombo} 连斩。`,
+      t('overlay.timeUp'),
+      tf('fruit.result', {
+        score: fruitState.score,
+        sliced: fruitState.sliced,
+        combo: fruitState.bestCombo,
+      }),
     );
     return;
   }
@@ -1231,7 +1282,7 @@ function drawFruitPopup(popup) {
   gameCtx.globalAlpha = alpha;
   gameCtx.textAlign = 'center';
   gameCtx.textBaseline = 'middle';
-  gameCtx.font = popup.text.includes('连斩') ? '900 22px Inter' : '800 20px Inter';
+  gameCtx.font = popup.isCombo ? '900 22px Inter' : '800 20px Inter';
   gameCtx.lineWidth = 5;
   gameCtx.strokeStyle = popup.color;
   gameCtx.fillStyle = 'rgba(255,255,255,0.98)';
@@ -1271,7 +1322,7 @@ function drawFruitHud() {
   gameCtx.stroke();
   gameCtx.fillStyle = fruitState.timeLeftMs <= 10_000 ? '#fca5a5' : '#f8fafc';
   gameCtx.font = '800 20px Inter';
-  gameCtx.fillText(`${Math.ceil(fruitState.timeLeftMs / 1000)}s`, gameCanvas.width - 42, 43);
+  gameCtx.fillText(`${Math.ceil(fruitState.timeLeftMs / 1000)}${t('fruit.countdownSuffix')}`, gameCanvas.width - 42, 43);
   gameCtx.restore();
 
   if (fruitState.combo < 2) return;
@@ -1284,7 +1335,7 @@ function drawFruitHud() {
   gameCtx.shadowBlur = 18;
   gameCtx.fillStyle = comboGradient;
   gameCtx.font = '900 28px Inter';
-  gameCtx.fillText(`${fruitState.combo} 连斩`, gameCanvas.width / 2, 56);
+  gameCtx.fillText(`${fruitState.combo} ${t('fruit.combo')}`, gameCanvas.width / 2, 56);
   gameCtx.restore();
 }
 
@@ -1304,7 +1355,7 @@ function drawFruitGame() {
 
 
 function getCurrentMeta() {
-  return GAME_META[currentGame];
+  return getLocalizedMeta(currentGame);
 }
 
 function getCurrentGameState() {
@@ -1320,6 +1371,7 @@ function isCurrentGameOver() {
 }
 
 function updateGameOverlay(show, title = overlayTitle.textContent, hint = overlayHint.textContent) {
+  overlayVisible = show;
   overlay.classList.toggle('hidden', !show);
   overlayTitle.textContent = title;
   overlayHint.textContent = hint;
@@ -1327,7 +1379,7 @@ function updateGameOverlay(show, title = overlayTitle.textContent, hint = overla
 
 function updateHud() {
   const meta = getCurrentMeta();
-  scoreLabel.textContent = '分数';
+  scoreLabel.textContent = t('stats.score');
   metricOneLabel.textContent = meta.metricOneLabel;
   metricTwoLabel.textContent = meta.metricTwoLabel;
 
@@ -1338,7 +1390,7 @@ function updateHud() {
   } else {
     scoreValue.textContent = String(fruitState.score);
     metricOneValue.textContent = String(fruitState.sliced);
-    metricTwoValue.textContent = `${Math.ceil(fruitState.timeLeftMs / 1000)} 秒`;
+    metricTwoValue.textContent = `${Math.ceil(fruitState.timeLeftMs / 1000)}${t('fruit.countdownSuffix')}`;
   }
 }
 
@@ -1346,7 +1398,7 @@ function renderGameCatalog() {
   if (!gameCatalog) return;
   gameCatalog.replaceChildren();
 
-  GAME_LIBRARY.forEach((item) => {
+  getLocalizedLibrary().forEach((item) => {
     const card = document.createElement(item.mode ? 'button' : 'article');
     card.className = `catalog-card${item.mode ? '' : ' coming'}${item.mode === currentGame ? ' active' : ''}`;
     if (item.mode) {
@@ -1378,7 +1430,9 @@ function renderGameCatalog() {
 
     const action = document.createElement('span');
     action.className = 'catalog-tag';
-    action.textContent = item.mode ? (item.mode === currentGame ? '当前正在玩' : '点击切换') : '创意预留位';
+    action.textContent = item.mode
+      ? (item.mode === currentGame ? t('catalog.action.current') : t('catalog.action.switch'))
+      : t('catalog.action.placeholder');
 
     foot.append(tagline, action);
     card.append(head, description, foot);
@@ -1390,8 +1444,11 @@ function applyGameMeta() {
 
   const meta = getCurrentMeta();
   appSubtitle.textContent = meta.subtitle;
-  activeGameName.textContent = `当前模式：${meta.name}`;
+  activeGameName.textContent = `${t('game.currentMode')}${meta.name}`;
   gamePanelTitle.textContent = meta.panelTitle;
+  if (difficultyLabel) {
+    difficultyLabel.textContent = meta.difficulty;
+  }
   meta.gestures.forEach(([label, action], index) => {
     gestureLabels[index].textContent = label;
     gestureActions[index].textContent = action;
@@ -1482,21 +1539,21 @@ function getStartGestureState(landmarks) {
   const leftRaised = leftWristVisible && leftReferenceY !== null && leftWrist.y < leftReferenceY - START_WRIST_MARGIN;
   const rightRaised = rightWristVisible && rightReferenceY !== null && rightWrist.y < rightReferenceY - START_WRIST_MARGIN;
 
-  let hint = '双手高举开始';
+  let hint = t('gesture.hint.default');
   if (!visibleShoulders.length) {
-    hint = '肩膀需要入镜，请后退半步';
+    hint = t('gesture.hint.shoulders');
   } else if (!leftWristVisible && !rightWristVisible) {
-    hint = '请把双手完整放进画面';
+    hint = t('gesture.hint.handsIn');
   } else if (!leftWristVisible) {
-    hint = '左手再往画面中间一点';
+    hint = t('gesture.hint.leftIn');
   } else if (!rightWristVisible) {
-    hint = '右手再往画面中间一点';
+    hint = t('gesture.hint.rightIn');
   } else if (!leftRaised && !rightRaised) {
-    hint = '双手再抬高一点';
+    hint = t('gesture.hint.raiseBoth');
   } else if (!leftRaised) {
-    hint = '左手再抬高一点';
+    hint = t('gesture.hint.raiseLeft');
   } else if (!rightRaised) {
-    hint = '右手再抬高一点';
+    hint = t('gesture.hint.raiseRight');
   }
 
   return {
@@ -1661,32 +1718,32 @@ function evaluateTetrisGestures(landmarks, now) {
       (torsoMidLine !== null && rightWrist.y > torsoMidLine - HANDS_DOWN_MARGIN) ||
       (rightHipY !== null && rightWrist.y > rightHipY - HANDS_DOWN_MARGIN));
 
-  let currentGesture = '站稳身体，抬手操控';
+  let currentGesture = t('gesture.idle');
 
   if (leftRaised && rightRaised) {
     if (now - lastTetrisGestureAt.rotate > GESTURE_COOLDOWN) {
       if (tryRotate()) {
-        currentGesture = '双手高举：旋转';
+        currentGesture = t('gesture.rotate');
         lastTetrisGestureAt.rotate = now;
       }
     } else {
-      currentGesture = '双手高举：旋转待命';
+      currentGesture = t('gesture.rotateStandby');
     }
   } else if (leftRaised && now - lastTetrisGestureAt.left > GESTURE_COOLDOWN) {
     if (tryMove(-1)) {
-      currentGesture = '左手抬高：向左';
+      currentGesture = t('gesture.left');
       lastTetrisGestureAt.left = now;
     }
   } else if (rightRaised && now - lastTetrisGestureAt.right > GESTURE_COOLDOWN) {
     if (tryMove(1)) {
-      currentGesture = '右手抬高：向右';
+      currentGesture = t('gesture.right');
       lastTetrisGestureAt.right = now;
     }
   }
 
   tetrisState.softDrop = leftDownEnough && rightDownEnough;
   if (tetrisState.softDrop) {
-    currentGesture = '双手下压：加速下落';
+    currentGesture = t('gesture.drop');
   }
 
   gestureValue.textContent = currentGesture;
@@ -1697,7 +1754,7 @@ function evaluateFruitGestures(landmarks) {
   const rightVisible = isGestureVisible(landmarks[16]);
 
   if (!leftVisible && !rightVisible) {
-    gestureValue.textContent = '请让双手保持入镜';
+    gestureValue.textContent = t('gesture.handsInView');
     return;
   }
 
@@ -1705,19 +1762,19 @@ function evaluateFruitGestures(landmarks) {
   const rightFast = handState.right.speed >= FRUIT_SLASH_SPEED;
 
   if (leftFast && rightFast) {
-    gestureValue.textContent = '双手连斩中';
+    gestureValue.textContent = t('gesture.dualSlash');
   } else if (leftFast) {
-    gestureValue.textContent = '左手挥切';
+    gestureValue.textContent = t('gesture.leftSlash');
   } else if (rightFast) {
-    gestureValue.textContent = '右手挥切';
+    gestureValue.textContent = t('gesture.rightSlash');
   } else {
-    gestureValue.textContent = '快速挥动双手切水果';
+    gestureValue.textContent = t('gesture.quickSlash');
   }
 }
 
 function evaluateGestures(landmarks, now) {
   if (!landmarks) {
-    gestureValue.textContent = '未检测到人体，请后退半步并让肩膀与双手入镜';
+    gestureValue.textContent = t('gesture.noBody');
     tetrisState.softDrop = false;
     return;
   }
@@ -1729,16 +1786,16 @@ function evaluateGestures(landmarks, now) {
       startPoseSince = startPoseSince || now;
       const held = now - startPoseSince;
       const progress = Math.min(100, Math.round((held / START_POSE_HOLD) * 100));
-      gestureValue.textContent = progress < 100 ? `开始手势 ${progress}%` : '游戏开始';
+      gestureValue.textContent = progress < 100 ? `${t('gesture.startPose')} ${progress}%` : t('gesture.start');
       if (held >= START_POSE_HOLD) {
         startCurrentGame();
         startPoseSince = 0;
-        gestureValue.textContent = '游戏开始';
+        gestureValue.textContent = t('gesture.start');
         lastTetrisGestureAt.rotate = now;
       }
     } else {
       startPoseSince = 0;
-      gestureValue.textContent = isCurrentGameOver() ? `重新开始：${startGesture.hint}` : startGesture.hint;
+      gestureValue.textContent = isCurrentGameOver() ? `${t('gesture.restartPrefix')}${startGesture.hint}` : startGesture.hint;
     }
     return;
   }
@@ -1765,39 +1822,39 @@ async function createPoseLandmarker(vision, delegate) {
 }
 
 async function initPose() {
-  cameraStatus.textContent = '加载模型中';
+  setCameraStatus('camera.status.loading');
   const vision = await FilesetResolver.forVisionTasks('/mediapipe/wasm');
 
   try {
     poseLandmarker = await createPoseLandmarker(vision, 'GPU');
-    cameraStatus.textContent = '识别中（GPU）';
+    setCameraStatus('camera.status.gpu');
   } catch (gpuError) {
     console.warn('GPU delegate failed, fallback to CPU.', gpuError);
     poseLandmarker = await createPoseLandmarker(vision, 'CPU');
-    cameraStatus.textContent = '识别中（CPU）';
+    setCameraStatus('camera.status.cpu');
   }
 }
 
 function describeCameraError(error) {
   if (!window.isSecureContext) {
-    return '当前页面不是安全环境，请用 localhost 打开，而不是直接双击 HTML 文件。';
+    return t('camera.err.insecure');
   }
 
   switch (error?.name) {
     case 'NotAllowedError':
     case 'PermissionDeniedError':
-      return '浏览器已拦截摄像头权限，请点击地址栏摄像头图标并允许访问。';
+      return t('camera.err.denied');
     case 'NotFoundError':
     case 'DevicesNotFoundError':
-      return '没有检测到可用摄像头，请确认笔记本摄像头可用。';
+      return t('camera.err.notFound');
     case 'NotReadableError':
     case 'TrackStartError':
-      return '摄像头正被其他应用占用，请关闭会议软件或相机程序后重试。';
+      return t('camera.err.busy');
     case 'OverconstrainedError':
     case 'ConstraintNotSatisfiedError':
-      return '当前摄像头不支持请求的分辨率，系统将回退到默认配置。';
+      return t('camera.err.constraint');
     default:
-      return `摄像头启动失败：${error?.message || '未知错误'}`;
+      return tf('camera.err.failed', { msg: error?.message || t('camera.err.unknown') });
   }
 }
 
@@ -1810,10 +1867,10 @@ async function requestCameraStream(constraints) {
 
 async function initCamera() {
   if (!navigator.mediaDevices?.getUserMedia) {
-    throw new Error('当前浏览器不支持 getUserMedia。');
+    throw new Error(t('camera.err.noGetUserMedia'));
   }
 
-  cameraStatus.textContent = '请求摄像头';
+  setCameraStatus('camera.status.request');
 
   let stream;
   try {
@@ -1833,7 +1890,7 @@ async function initCamera() {
   video.srcObject = stream;
   await video.play();
   resizePoseCanvas();
-  cameraStatus.textContent = '摄像头已连接';
+  setCameraStatus('camera.status.connected');
 }
 
 function detectPose(now) {
@@ -1845,14 +1902,73 @@ function detectPose(now) {
     latestLandmarks = result.landmarks?.[0] ?? null;
 
     if (latestLandmarks) {
-      cameraStatus.textContent = `识别中 · ${getVisibleLandmarkCount(latestLandmarks)}/33`;
+      setCameraStatus('camera.status.trackingCount', { count: getVisibleLandmarkCount(latestLandmarks) });
     } else {
-      cameraStatus.textContent = '识别中 · 未检测到人体';
+      setCameraStatus('camera.status.noBody');
     }
 
     updateHandTracking(latestLandmarks, now);
     drawPose(latestLandmarks);
     evaluateGestures(latestLandmarks, now);
+  }
+}
+
+function setLanguage(lang) {
+  setLang(lang);
+  updateLangButton();
+  applyGameMeta();
+
+  const state = getCurrentGameState();
+
+  if (startupFailure) {
+    gameStateBadge.textContent = t('game.state.unavailable');
+  } else if (state.gameOver) {
+    gameStateBadge.textContent = t('game.state.over');
+  } else if (state.running) {
+    gameStateBadge.textContent = currentGame === GAME_MODES.TETRIS ? t('game.state.playing') : t('game.state.timer');
+  } else {
+    gameStateBadge.textContent = t('game.state.ready');
+  }
+
+  if (lastCameraStatus.key) {
+    setCameraStatus(lastCameraStatus.key, lastCameraStatus.params);
+  }
+
+  if (startupFailure) {
+    gestureValue.textContent = startupFailure.kind === 'camera' ? t('camera.status.unavailable') : t('camera.status.modelLoadFail');
+  } else {
+    gestureValue.textContent = t('stats.waiting');
+  }
+
+  if (overlayVisible) {
+    if (startupFailure) {
+      if (startupFailure.kind === 'camera') {
+        updateGameOverlay(true, t('overlay.cameraStartFail'), describeCameraError(startupFailure.error));
+      } else {
+        updateGameOverlay(
+          true,
+          t('overlay.modelStartFail'),
+          `${t('overlay.reloadHint')}${startupFailure.error?.message ? `\n${tf('overlay.errorDetail', { msg: startupFailure.error.message })}` : ''}`,
+        );
+      }
+    } else if (state.gameOver) {
+      if (currentGame === GAME_MODES.TETRIS) {
+        updateGameOverlay(true, t('overlay.gameOver'), t('overlay.restartHintFruit'));
+      } else {
+        updateGameOverlay(
+          true,
+          t('overlay.timeUp'),
+          `${tf('fruit.result', {
+            score: fruitState.score,
+            sliced: fruitState.sliced,
+            combo: fruitState.bestCombo,
+          })} ${t('overlay.restartBackHint')}`,
+        );
+      }
+    } else {
+      const meta = getCurrentMeta();
+      updateGameOverlay(true, meta.startTitle, meta.startHint);
+    }
   }
 }
 
@@ -1862,6 +1978,10 @@ function setupEvents() {
   restartBtn.addEventListener('click', () => {
     resetHandTracking();
     resetCurrentGame();
+  });
+
+  langBtn?.addEventListener('click', () => {
+    setLanguage(getLang() === 'zh' ? 'en' : 'zh');
   });
 
   gameCatalog?.addEventListener('click', (event) => {
@@ -1923,6 +2043,8 @@ function gameLoop(timestamp) {
 }
 
 async function bootstrap() {
+  initLanguage();
+  updateLangButton();
   await preloadSprites();
   applyGameMeta();
   resetCurrentGame();
@@ -1934,27 +2056,30 @@ async function bootstrap() {
 
   } catch (error) {
     console.error(error);
-    cameraStatus.textContent = '摄像头失败';
-    gameStateBadge.textContent = '不可用';
-    gestureValue.textContent = '摄像头不可用';
-    updateGameOverlay(true, '无法启动摄像头', describeCameraError(error));
+    startupFailure = { kind: 'camera', error };
+    setCameraStatus('camera.status.fail');
+    gameStateBadge.textContent = t('game.state.unavailable');
+    gestureValue.textContent = t('camera.status.unavailable');
+    updateGameOverlay(true, t('overlay.cameraStartFail'), describeCameraError(error));
     requestAnimationFrame(gameLoop);
     return;
   }
 
   try {
     await initPose();
-    cameraStatus.textContent = '识别中';
-    updateGameOverlay(true, getCurrentMeta().startTitle, getCurrentMeta().startHint);
+    setCameraStatus('camera.status.tracking');
+    const meta = getCurrentMeta();
+    updateGameOverlay(true, meta.startTitle, meta.startHint);
   } catch (error) {
     console.error(error);
-    cameraStatus.textContent = '模型失败';
-    gameStateBadge.textContent = '不可用';
-    gestureValue.textContent = '姿态模型加载失败';
+    startupFailure = { kind: 'model', error };
+    setCameraStatus('camera.status.modelFail');
+    gameStateBadge.textContent = t('game.state.unavailable');
+    gestureValue.textContent = t('camera.status.modelLoadFail');
     updateGameOverlay(
       true,
-      '摄像头已连接，但姿态模型启动失败',
-      `请刷新页面重试；若仍失败，请检查浏览器控制台错误信息。${error?.message ? `\n错误：${error.message}` : ''}`,
+      t('overlay.modelStartFail'),
+      `${t('overlay.reloadHint')}${error?.message ? `\n${tf('overlay.errorDetail', { msg: error.message })}` : ''}`,
     );
   }
 

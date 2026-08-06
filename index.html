@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#070b16" />
-    <title>MOVE ARCADE · 体感游戏中心</title>
+    <title data-i18n="app.title">MOVE ARCADE · 体感游戏中心</title>
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
@@ -13,22 +13,23 @@
 
     <div class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#" aria-label="MOVE ARCADE 首页">
+        <a class="brand" href="#" aria-label="MOVE ARCADE 首页" data-i18n-aria="brand.aria">
           <span class="brand-mark">M</span>
           <span>
             <strong>MOVE ARCADE</strong>
-            <small>让身体成为手柄</small>
+            <small data-i18n="brand.tagline">让身体成为手柄</small>
           </span>
         </a>
 
         <div class="session-status" aria-live="polite">
           <span class="live-dot"></span>
-          <span id="sessionStatus">正在准备体感空间</span>
+          <span id="sessionStatus" data-i18n="session.status">正在准备体感空间</span>
         </div>
 
         <div class="top-actions">
-          <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" title="切换提示音">声音 开</button>
-          <button class="icon-btn" id="helpBtn" type="button">新手帮助</button>
+          <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" data-i18n="sound.on" data-i18n-title="sound.title" title="切换提示音">声音 开</button>
+          <button class="icon-btn" id="helpBtn" type="button" data-i18n="help.btn">新手帮助</button>
+          <button class="icon-btn" id="langBtn" type="button" aria-label="切换语言" data-i18n-aria="lang.aria">中文</button>
         </div>
       </header>
 
@@ -37,30 +38,30 @@
           <div class="section-heading">
             <div>
               <span class="section-kicker">GAME LIBRARY</span>
-              <h1>今天想怎么玩？</h1>
+              <h1 data-i18n="lib.heading">今天想怎么玩？</h1>
             </div>
-            <span class="count-pill">4 款可玩</span>
+            <span class="count-pill" data-i18n="lib.playableCount">4 款可玩</span>
           </div>
 
-          <p class="library-intro">拖动游戏卡片调整顺序，或让系统根据你的最近体验自动推荐。</p>
+          <p class="library-intro" data-i18n="lib.intro">拖动游戏卡片调整顺序，或让系统根据你的最近体验自动推荐。</p>
 
           <div class="library-tools">
             <label class="select-wrap">
-              <span class="sr-only">游戏排序方式</span>
-              <select id="sortGames" aria-label="游戏排序方式">
-                <option value="custom">我的顺序</option>
-                <option value="smart">智能推荐</option>
-                <option value="recent">最近玩过</option>
+              <span class="sr-only" data-i18n="lib.sortLabel">游戏排序方式</span>
+              <select id="sortGames" aria-label="游戏排序方式" data-i18n-aria="lib.sortLabel">
+                <option value="custom" data-i18n="lib.sort.custom">我的顺序</option>
+                <option value="smart" data-i18n="lib.sort.smart">智能推荐</option>
+                <option value="recent" data-i18n="lib.sort.recent">最近玩过</option>
               </select>
             </label>
-            <button class="square-btn" id="shuffleGamesBtn" type="button" title="随机换一组顺序" aria-label="随机换一组顺序">换一换</button>
+            <button class="square-btn" id="shuffleGamesBtn" type="button" title="随机换一组顺序" aria-label="随机换一组顺序" data-i18n="lib.shuffle" data-i18n-title="lib.shuffle.title" data-i18n-aria="lib.shuffle.title">换一换</button>
           </div>
 
-          <div class="catalog-grid" id="gameCatalog" aria-label="体感游戏列表"></div>
+          <div class="catalog-grid" id="gameCatalog" aria-label="体感游戏列表" data-i18n-aria="lib.catalogAria"></div>
 
           <div class="library-note">
-            <span>产品提示</span>
-            <p>建议每局 3–5 分钟，游戏间穿插低强度玩法，减少持续高举手臂的疲劳。</p>
+            <span data-i18n="lib.noteLabel">产品提示</span>
+            <p data-i18n="lib.note">建议每局 3–5 分钟，游戏间穿插低强度玩法，减少持续高举手臂的疲劳。</p>
           </div>
         </aside>
 
@@ -89,9 +90,9 @@
                 <div class="overlay-icon" id="overlayIcon">↟</div>
                 <h3 id="overlayTitle">双手高举，准备开始</h3>
                 <p id="overlayHint">保持上半身和双手完整入镜，动作保持片刻即可开始。</p>
-                <button class="primary-btn overlay-btn" id="startActionBtn" type="button">不用手势，直接开始</button>
+                <button class="primary-btn overlay-btn" id="startActionBtn" type="button" data-i18n="overlay.startAction">不用手势，直接开始</button>
               </div>
-              <div class="action-toast" id="actionToast" aria-live="polite">等待动作</div>
+              <div class="action-toast" id="actionToast" aria-live="polite" data-i18n="overlay.toastWait">等待动作</div>
             </div>
           </div>
 
@@ -109,16 +110,16 @@
               <strong id="metricTwoValue">1</strong>
             </div>
             <div class="stat-card action-stat">
-              <span>识别反馈</span>
+              <span data-i18n="stats.recognition">识别反馈</span>
               <strong id="gestureValue">等待识别</strong>
             </div>
           </div>
 
           <div class="game-actions">
-            <button class="primary-btn" id="mainStartBtn" type="button">开始游戏</button>
-            <button class="secondary-btn" id="pauseBtn" type="button">暂停</button>
-            <button class="secondary-btn" id="restartBtn" type="button">重新开始</button>
-            <span class="keyboard-tip">键盘备用：Enter 开始 · P 暂停 · 1–4 切换游戏</span>
+            <button class="primary-btn" id="mainStartBtn" type="button" data-i18n="controls.start">开始游戏</button>
+            <button class="secondary-btn" id="pauseBtn" type="button" data-i18n="controls.pause">暂停</button>
+            <button class="secondary-btn" id="restartBtn" type="button" data-i18n="controls.restart">重新开始</button>
+            <span class="keyboard-tip" data-i18n="controls.keyboardTip">键盘备用：Enter 开始 · P 暂停 · 1–4 切换游戏</span>
           </div>
         </section>
 
@@ -127,7 +128,7 @@
             <div class="compact-heading">
               <div>
                 <span class="section-kicker">BODY TRACKING</span>
-                <h2>体感镜头</h2>
+                <h2 data-i18n="cameraPanel.title">体感镜头</h2>
               </div>
               <span class="camera-badge" id="cameraStatus">等待授权</span>
             </div>
@@ -135,17 +136,17 @@
             <div class="camera-stage">
               <video id="camera" autoplay playsinline muted></video>
               <canvas id="poseCanvas"></canvas>
-              <div class="safe-frame"><span>站在框内 · 保持上半身入镜</span></div>
+              <div class="safe-frame"><span data-i18n="cameraPanel.safeFrame">站在框内 · 保持上半身入镜</span></div>
               <div class="scanline"></div>
             </div>
 
             <div class="tracking-summary">
               <div class="quality-row">
-                <span>识别质量</span>
-                <strong id="trackingQuality">准备中</strong>
+                <span data-i18n="cameraPanel.quality">识别质量</span>
+                <strong id="trackingQuality" data-i18n="cameraPanel.trackingQuality">准备中</strong>
               </div>
               <div class="quality-meter"><i id="qualityMeter"></i></div>
-              <p id="trackingTip">摄像头开启后，这里会实时提示站位。</p>
+              <p id="trackingTip" data-i18n="cameraPanel.tip">摄像头开启后，这里会实时提示站位。</p>
             </div>
           </section>
 
@@ -153,27 +154,27 @@
             <div class="compact-heading">
               <div>
                 <span class="section-kicker">COMFORT</span>
-                <h2>操作舒适度</h2>
+                <h2 data-i18n="comfort.title">操作舒适度</h2>
               </div>
-              <span class="soft-chip">已防误触</span>
+              <span class="soft-chip" data-i18n="comfort.chip">已防误触</span>
             </div>
 
             <div class="setting-block">
               <div class="setting-copy">
-                <strong>动作幅度</strong>
-                <span>肩颈不舒服时选“轻柔”</span>
+                <strong data-i18n="comfort.rangeLabel">动作幅度</strong>
+                <span data-i18n="comfort.rangeHint">肩颈不舒服时选“轻柔”</span>
               </div>
-              <div class="segment-control" id="motionRangeControl" role="group" aria-label="动作幅度">
-                <button type="button" data-range="gentle">轻柔</button>
-                <button class="active" type="button" data-range="standard">标准</button>
-                <button type="button" data-range="active">活力</button>
+              <div class="segment-control" id="motionRangeControl" role="group" aria-label="动作幅度" data-i18n-aria="comfort.rangeLabel">
+                <button type="button" data-range="gentle" data-i18n="comfort.gentle">轻柔</button>
+                <button class="active" type="button" data-range="standard" data-i18n="comfort.standard">标准</button>
+                <button type="button" data-range="active" data-i18n="comfort.active">活力</button>
               </div>
             </div>
 
             <label class="toggle-row">
               <span>
-                <strong>减少动态效果</strong>
-                <small>降低闪光和粒子密度</small>
+                <strong data-i18n="comfort.reduceFx">减少动态效果</strong>
+                <small data-i18n="comfort.reduceFxHint">降低闪光和粒子密度</small>
               </span>
               <input id="reducedMotionToggle" type="checkbox" />
               <i aria-hidden="true"></i>
@@ -184,9 +185,9 @@
             <div class="compact-heading">
               <div>
                 <span class="section-kicker">NOW PLAYING</span>
-                <h2>本局动作</h2>
+                <h2 data-i18n="guide.title">本局动作</h2>
               </div>
-              <span class="soft-chip">先看再玩</span>
+              <span class="soft-chip" data-i18n="guide.chip">先看再玩</span>
             </div>
             <div class="gesture-strip">
               <div class="gesture-card">
@@ -212,16 +213,16 @@
     </div>
 
     <dialog id="helpDialog" class="help-dialog">
-      <button class="dialog-close" id="closeHelpBtn" type="button" aria-label="关闭帮助">×</button>
-      <span class="section-kicker">60 秒上手</span>
-      <h2>先让身体和镜头建立默契</h2>
+      <button class="dialog-close" id="closeHelpBtn" type="button" aria-label="关闭帮助" data-i18n-aria="help.close">×</button>
+      <span class="section-kicker" data-i18n="help.kicker">60 秒上手</span>
+      <h2 data-i18n="help.title">先让身体和镜头建立默契</h2>
       <div class="help-steps">
-        <div><span>1</span><strong>退后半步</strong><p>让头部、肩膀、手腕都出现在安全框内。</p></div>
-        <div><span>2</span><strong>双手高举</strong><p>保持约 0.8 秒，随后会有 3 秒倒计时，避免突然开局。</p></div>
-        <div><span>3</span><strong>小幅试动作</strong><p>先观察“识别反馈”，动作被确认后再继续。</p></div>
+        <div><span>1</span><strong data-i18n="help.step1.title">退后半步</strong><p data-i18n="help.step1.desc">让头部、肩膀、手腕都出现在安全框内。</p></div>
+        <div><span>2</span><strong data-i18n="help.step2.title">双手高举</strong><p data-i18n="help.step2.desc">保持约 0.8 秒，随后会有 3 秒倒计时，避免突然开局。</p></div>
+        <div><span>3</span><strong data-i18n="help.step3.title">小幅试动作</strong><p data-i18n="help.step3.desc">先观察“识别反馈”，动作被确认后再继续。</p></div>
       </div>
-      <p class="help-note">随时可用按钮或键盘操作；累了就把动作幅度切到“轻柔”。</p>
-      <button class="primary-btn" id="helpDoneBtn" type="button">知道了，开始体验</button>
+      <p class="help-note" data-i18n="help.note">随时可用按钮或键盘操作；累了就把动作幅度切到“轻柔”。</p>
+      <button class="primary-btn" id="helpDoneBtn" type="button" data-i18n="help.done">知道了，开始体验</button>
     </dialog>
 
     <script type="module" src="./src/main.js"></script>
