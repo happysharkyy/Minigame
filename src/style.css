@@ -24,6 +24,8 @@ body {
   min-width: 320px;
   min-height: 100vh;
   overflow-x: hidden;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
   font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
   background:
     linear-gradient(rgba(255,255,255,.017) 1px, transparent 1px),
@@ -71,9 +73,9 @@ h1, h2, h3, p { margin: 0; }
 .ambient-two { right: -180px; bottom: 5%; background: var(--violet); }
 
 .app-shell {
-  width: min(1780px, calc(100vw - 32px));
+  width: min(1780px, calc(100vw - 32px - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
   margin: 0 auto;
-  padding: 16px 0 36px;
+  padding: 16px 0 calc(36px + env(safe-area-inset-bottom, 0px));
 }
 
 .topbar {
@@ -82,7 +84,7 @@ h1, h2, h3, p { margin: 0; }
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 20px;
-  padding: 0 4px 14px;
+  padding: calc(6px + env(safe-area-inset-top, 0px)) 4px 14px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 16px;
 }
@@ -298,9 +300,10 @@ button:active { transform: translateY(1px); }
 .game-stage-wrap {
   position: relative;
   overflow: hidden;
-  width: min(100%, 340px);
-  height: min(61vh, 610px);
-  min-height: 455px;
+  width: min(100%, 34vh, 360px);
+  width: min(100%, 34dvh, 360px);
+  height: auto;
+  min-height: 0;
   aspect-ratio: 1 / 2;
   border: 1px solid rgba(139,245,220,.16);
   border-radius: 18px;
@@ -443,32 +446,79 @@ button:active { transform: translateY(1px); }
   .experience-layout { grid-template-columns: 255px minmax(0, 1fr); }
   .coach-column { grid-column: 1 / -1; grid-template-columns: repeat(3, 1fr); }
   .library-panel { max-height: none; }
-  .game-stage-wrap { height: min(67vh, 650px); }
 }
 
 @media (max-width: 760px) {
   .app-shell { width: min(100% - 18px, 100%); padding-top: 10px; }
-  .topbar { grid-template-columns: 1fr auto; }
+  .topbar { grid-template-columns: 1fr auto; padding-bottom: 10px; margin-bottom: 12px; }
   .session-status { display: none; }
   .top-actions .icon-btn:first-child { display: none; }
+
+  /* 玩优先:游戏 → 相机 → 本局动作 → 舒适度 → 游戏库 */
   .experience-layout { grid-template-columns: 1fr; }
   .game-panel { grid-row: 1; }
-  .library-panel { grid-row: 2; }
-  .coach-column { grid-column: auto; grid-template-columns: 1fr; }
-  .catalog-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .coach-column { grid-column: auto; grid-row: 2; grid-template-columns: 1fr 1fr; }
+  .library-panel { grid-row: 3; }
+
+  .camera-panel { grid-column: 1 / -1; grid-row: 1; }
+  .guide-panel { grid-row: 2; }
+  .comfort-panel { grid-row: 2; }
+
+  /* 游戏库横向滚动 */
+  .catalog-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .catalog-grid::-webkit-scrollbar { display: none; }
+  .catalog-card { flex: 0 0 240px; width: auto; }
+  .library-intro, .library-note { display: none; }
+
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .game-stage-wrap { width: min(100%, 350px); height: min(66vh, 610px); min-height: 420px; }
   .stage-rail { display: none; }
   .game-header { flex-direction: column; }
+
+  /* 可点目标 ≥44px */
+  .icon-btn, .primary-btn, .secondary-btn, .square-btn { min-height: 44px; }
+  .segment-control button { min-height: 38px; }
+  .order-btn { width: 34px; height: 34px; }
+
+  /* iOS select 聚焦防自动放大 */
+  .select-wrap select { font-size: 16px; }
+
+  /* 移动端降低模糊半径,兼顾低端机性能 */
+  .panel { backdrop-filter: blur(8px); }
+
+  .help-dialog { padding: 20px; }
   .help-steps { grid-template-columns: 1fr; }
   .help-steps span { margin-bottom: 8px; }
 }
 
 @media (max-width: 480px) {
-  .catalog-grid { grid-template-columns: 1fr; }
   .game-panel { padding: 12px; }
   .top-actions { gap: 4px; }
+  .brand { gap: 8px; }
+  .brand-mark { width: 34px; height: 34px; }
+  .brand strong { font-size: .85rem; letter-spacing: .1em; }
   .brand small { display: none; }
   .game-actions { display: grid; grid-template-columns: 1fr 1fr; }
   .game-actions .primary-btn { grid-column: 1 / -1; }
+}
+
+/* 窄屏:教练列退回单列,顺序固定 相机→本局动作→舒适度 */
+@media (max-width: 400px) {
+  .coach-column { grid-template-columns: 1fr; }
+  .camera-panel { grid-column: auto; grid-row: 1; }
+  .guide-panel { grid-row: 2; }
+  .comfort-panel { grid-row: 3; }
+  .catalog-card { flex: 0 0 200px; }
+}
+
+/* 横屏手机兜底:左侧游戏+游戏库,右侧相机/动作/舒适度 */
+@media (orientation: landscape) and (max-height: 560px) {
+  .experience-layout { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); grid-template-areas: "game coach" "lib coach"; }
+  .game-panel { grid-area: game; }
+  .coach-column { grid-area: coach; grid-template-columns: 1fr; align-content: start; max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; scrollbar-width: none; }
+  .coach-column .camera-panel, .coach-column .guide-panel, .coach-column .comfort-panel { grid-column: auto; grid-row: auto; }
+  .library-panel { grid-area: lib; max-height: none; }
+  .library-intro, .library-note { display: none; }
+  .catalog-grid { display: flex; gap: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .catalog-card { flex: 0 0 200px; width: auto; }
+  .game-stage-wrap { width: auto; max-width: 100%; height: calc(100vh - 130px); height: calc(100dvh - 130px); min-height: 0; }
 }
