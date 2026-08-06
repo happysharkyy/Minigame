@@ -79,6 +79,8 @@ const I18N = {
     'overlay.toastWait': '等待动作',
     'overlay.cameraStartFail': '无法启动摄像头',
     'overlay.modelStartFail': '摄像头已连接，但姿态模型启动失败',
+    'overlay.modelLoading': '正在加载姿态模型',
+    'overlay.modelLoadingHint': '首次加载需下载模型文件，请耐心等待。',
     'overlay.reloadHint': '请刷新页面重试；若仍失败，请检查浏览器控制台错误信息。',
     'overlay.errorDetail': '错误：{msg}',
 
@@ -332,6 +334,8 @@ const I18N = {
     'overlay.toastWait': 'Waiting for your move',
     'overlay.cameraStartFail': 'Could not start camera',
     'overlay.modelStartFail': 'Camera is connected, but the pose model failed to start',
+    'overlay.modelLoading': 'Loading pose model',
+    'overlay.modelLoadingHint': 'The first load downloads the model files — please wait.',
     'overlay.reloadHint': 'Refresh the page and try again. If it still fails, check the browser console.',
     'overlay.errorDetail': 'Error: {msg}',
 

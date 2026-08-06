@@ -273,6 +273,7 @@ const langBtn = document.querySelector('#langBtn');
 let lastCameraStatus = { key: null, params: null };
 let startupFailure = null;
 let overlayVisible = false;
+let modelLoading = false;
 
 function setCameraStatus(key, params) {
   lastCameraStatus = { key, params };
@@ -1821,16 +1822,47 @@ async function createPoseLandmarker(vision, delegate) {
   });
 }
 
+function withTimeout(promise, ms) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+const MODEL_LOAD_TIMEOUT = 60_000;
+const GPU_ATTEMPT_TIMEOUT = 12_000;
+
+function isMobileDevice() {
+  const ua = navigator.userAgent || '';
+  return (
+    navigator.userAgentData?.mobile === true ||
+    /Mobile|Android|iPhone|iPad|iPod/i.test(ua) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  );
+}
+
 async function initPose() {
   setCameraStatus('camera.status.loading');
-  const vision = await FilesetResolver.forVisionTasks('/mediapipe/wasm');
+  const vision = await withTimeout(FilesetResolver.forVisionTasks('/mediapipe/wasm'), MODEL_LOAD_TIMEOUT);
+
+  // 移动端 GPU delegate 在部分浏览器(尤其 iOS Safari)创建模型时会无限挂起而不抛错,
+  // 导致「GPU 失败就退回 CPU」的 fallback 永远不触发,页面一直停在「加载模型中」。
+  // 所以移动端直接走 CPU,并用超时兜底,确保一定会失败前进。
+  if (isMobileDevice()) {
+    setCameraStatus('camera.status.cpu');
+    poseLandmarker = await withTimeout(createPoseLandmarker(vision, 'CPU'), MODEL_LOAD_TIMEOUT);
+    return;
+  }
 
   try {
-    poseLandmarker = await createPoseLandmarker(vision, 'GPU');
+    poseLandmarker = await withTimeout(createPoseLandmarker(vision, 'GPU'), GPU_ATTEMPT_TIMEOUT);
     setCameraStatus('camera.status.gpu');
   } catch (gpuError) {
-    console.warn('GPU delegate failed, fallback to CPU.', gpuError);
-    poseLandmarker = await createPoseLandmarker(vision, 'CPU');
+    console.warn('GPU delegate failed or timed out, fallback to CPU.', gpuError);
+    poseLandmarker = await withTimeout(createPoseLandmarker(vision, 'CPU'), MODEL_LOAD_TIMEOUT);
     setCameraStatus('camera.status.cpu');
   }
 }
@@ -1941,7 +1973,9 @@ function setLanguage(lang) {
   }
 
   if (overlayVisible) {
-    if (startupFailure) {
+    if (modelLoading) {
+      updateGameOverlay(true, t('overlay.modelLoading'), t('overlay.modelLoadingHint'));
+    } else if (startupFailure) {
       if (startupFailure.kind === 'camera') {
         updateGameOverlay(true, t('overlay.cameraStartFail'), describeCameraError(startupFailure.error));
       } else {
@@ -2066,11 +2100,17 @@ async function bootstrap() {
   }
 
   try {
+    // 模型加载可能较久(首次需下载模型文件),先把覆盖层切到加载提示。
+    modelLoading = true;
+    updateGameOverlay(true, t('overlay.modelLoading'), t('overlay.modelLoadingHint'));
+
     await initPose();
+    modelLoading = false;
     setCameraStatus('camera.status.tracking');
     const meta = getCurrentMeta();
     updateGameOverlay(true, meta.startTitle, meta.startHint);
   } catch (error) {
+    modelLoading = false;
     console.error(error);
     startupFailure = { kind: 'model', error };
     setCameraStatus('camera.status.modelFail');
