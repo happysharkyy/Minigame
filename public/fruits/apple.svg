@@ -1,0 +1,15 @@
+<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="ap-body" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(86 70) rotate(58) scale(126)">
+      <stop offset="0" stop-color="#FECACA"/>
+      <stop offset="0.52" stop-color="#EF4444"/>
+      <stop offset="1" stop-color="#B91C1C"/>
+    </radialGradient>
+  </defs>
+  <path d="M109 60c18-24 48-27 62-5 12 18 11 45 1 76-13 39-34 56-63 56-29 0-49-17-61-56-10-31-11-58 1-76 15-22 44-19 60 5Z" fill="url(#ap-body)"/>
+  <path d="M109 60c-16-15-34-20-49-5" stroke="#991B1B" stroke-width="6" stroke-linecap="round"/>
+  <path d="M109 59c14-22 12-34 5-43" stroke="#6B3F1D" stroke-width="7" stroke-linecap="round"/>
+  <path d="M116 34c16-9 31-8 43 8-16 10-31 10-45 1l2-9Z" fill="#22C55E"/>
+  <ellipse cx="85" cy="84" rx="22" ry="16" fill="#FFF1F2" fill-opacity="0.55"/>
+  <ellipse cx="134" cy="140" rx="26" ry="18" fill="#7F1D1D" fill-opacity="0.18"/>
+</svg>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#070b16" />
+    <title>MOVE ARCADE · 体感游戏中心</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div>
+    <div class="ambient ambient-two"></div>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#" aria-label="MOVE ARCADE 首页">
+          <span class="brand-mark">M</span>
+          <span>
+            <strong>MOVE ARCADE</strong>
+            <small>让身体成为手柄</small>
+          </span>
+        </a>
+
+        <div class="session-status" aria-live="polite">
+          <span class="live-dot"></span>
+          <span id="sessionStatus">正在准备体感空间</span>
+        </div>
+
+        <div class="top-actions">
+          <button class="icon-btn" id="soundBtn" type="button" aria-pressed="true" title="切换提示音">声音 开</button>
+          <button class="icon-btn" id="helpBtn" type="button">新手帮助</button>
+        </div>
+      </header>
+
+      <main class="experience-layout">
+        <aside class="panel library-panel">
+          <div class="section-heading">
+            <div>
+              <span class="section-kicker">GAME LIBRARY</span>
+              <h1>今天想怎么玩？</h1>
+            </div>
+            <span class="count-pill">4 款可玩</span>
+          </div>
+
+          <p class="library-intro">拖动游戏卡片调整顺序，或让系统根据你的最近体验自动推荐。</p>
+
+          <div class="library-tools">
+            <label class="select-wrap">
+              <span class="sr-only">游戏排序方式</span>
+              <select id="sortGames" aria-label="游戏排序方式">
+                <option value="custom">我的顺序</option>
+                <option value="smart">智能推荐</option>
+                <option value="recent">最近玩过</option>
+              </select>
+            </label>
+            <button class="square-btn" id="shuffleGamesBtn" type="button" title="随机换一组顺序" aria-label="随机换一组顺序">换一换</button>
+          </div>
+
+          <div class="catalog-grid" id="gameCatalog" aria-label="体感游戏列表"></div>
+
+          <div class="library-note">
+            <span>产品提示</span>
+            <p>建议每局 3–5 分钟，游戏间穿插低强度玩法，减少持续高举手臂的疲劳。</p>
+          </div>
+        </aside>
+
+        <section class="panel game-panel">
+          <div class="game-header">
+            <div>
+              <div class="game-eyebrow">
+                <span id="activeGameName">体感俄罗斯方块</span>
+                <span class="difficulty-chip" id="difficultyLabel">轻松上手</span>
+              </div>
+              <h2 id="gamePanelTitle">俄罗斯方块</h2>
+              <p id="appSubtitle">抬手控制方向，用自然动作完成消除。</p>
+            </div>
+            <span class="state-badge" id="gameStateBadge">准备中</span>
+          </div>
+
+          <div class="game-stage-shell">
+            <div class="stage-rail" aria-hidden="true">
+              <span>LIVE</span>
+              <i></i>
+              <span>MOVE</span>
+            </div>
+            <div class="game-stage-wrap">
+              <canvas id="gameCanvas" width="360" height="720"></canvas>
+              <div class="game-overlay" id="gameOverlay">
+                <div class="overlay-icon" id="overlayIcon">↟</div>
+                <h3 id="overlayTitle">双手高举，准备开始</h3>
+                <p id="overlayHint">保持上半身和双手完整入镜，动作保持片刻即可开始。</p>
+                <button class="primary-btn overlay-btn" id="startActionBtn" type="button">不用手势，直接开始</button>
+              </div>
+              <div class="action-toast" id="actionToast" aria-live="polite">等待动作</div>
+            </div>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-card">
+              <span id="scoreLabel">分数</span>
+              <strong id="scoreValue">0</strong>
+            </div>
+            <div class="stat-card">
+              <span id="metricOneLabel">消除</span>
+              <strong id="metricOneValue">0</strong>
+            </div>
+            <div class="stat-card">
+              <span id="metricTwoLabel">等级</span>
+              <strong id="metricTwoValue">1</strong>
+            </div>
+            <div class="stat-card action-stat">
+              <span>识别反馈</span>
+              <strong id="gestureValue">等待识别</strong>
+            </div>
+          </div>
+
+          <div class="game-actions">
+            <button class="primary-btn" id="mainStartBtn" type="button">开始游戏</button>
+            <button class="secondary-btn" id="pauseBtn" type="button">暂停</button>
+            <button class="secondary-btn" id="restartBtn" type="button">重新开始</button>
+            <span class="keyboard-tip">键盘备用：Enter 开始 · P 暂停 · 1–4 切换游戏</span>
+          </div>
+        </section>
+
+        <aside class="coach-column">
+          <section class="panel camera-panel">
+            <div class="compact-heading">
+              <div>
+                <span class="section-kicker">BODY TRACKING</span>
+                <h2>体感镜头</h2>
+              </div>
+              <span class="camera-badge" id="cameraStatus">等待授权</span>
+            </div>
+
+            <div class="camera-stage">
+              <video id="camera" autoplay playsinline muted></video>
+              <canvas id="poseCanvas"></canvas>
+              <div class="safe-frame"><span>站在框内 · 保持上半身入镜</span></div>
+              <div class="scanline"></div>
+            </div>
+
+            <div class="tracking-summary">
+              <div class="quality-row">
+                <span>识别质量</span>
+                <strong id="trackingQuality">准备中</strong>
+              </div>
+              <div class="quality-meter"><i id="qualityMeter"></i></div>
+              <p id="trackingTip">摄像头开启后，这里会实时提示站位。</p>
+            </div>
+          </section>
+
+          <section class="panel comfort-panel">
+            <div class="compact-heading">
+              <div>
+                <span class="section-kicker">COMFORT</span>
+                <h2>操作舒适度</h2>
+              </div>
+              <span class="soft-chip">已防误触</span>
+            </div>
+
+            <div class="setting-block">
+              <div class="setting-copy">
+                <strong>动作幅度</strong>
+                <span>肩颈不舒服时选“轻柔”</span>
+              </div>
+              <div class="segment-control" id="motionRangeControl" role="group" aria-label="动作幅度">
+                <button type="button" data-range="gentle">轻柔</button>
+                <button class="active" type="button" data-range="standard">标准</button>
+                <button type="button" data-range="active">活力</button>
+              </div>
+            </div>
+
+            <label class="toggle-row">
+              <span>
+                <strong>减少动态效果</strong>
+                <small>降低闪光和粒子密度</small>
+              </span>
+              <input id="reducedMotionToggle" type="checkbox" />
+              <i aria-hidden="true"></i>
+            </label>
+          </section>
+
+          <section class="panel guide-panel">
+            <div class="compact-heading">
+              <div>
+                <span class="section-kicker">NOW PLAYING</span>
+                <h2>本局动作</h2>
+              </div>
+              <span class="soft-chip">先看再玩</span>
+            </div>
+            <div class="gesture-strip">
+              <div class="gesture-card">
+                <span class="gesture-index">01</span>
+                <div><span id="gestureLabel1">左手抬高</span><strong id="gestureAction1">向左移动</strong></div>
+              </div>
+              <div class="gesture-card">
+                <span class="gesture-index">02</span>
+                <div><span id="gestureLabel2">右手抬高</span><strong id="gestureAction2">向右移动</strong></div>
+              </div>
+              <div class="gesture-card">
+                <span class="gesture-index">03</span>
+                <div><span id="gestureLabel3">双手高举</span><strong id="gestureAction3">旋转方块</strong></div>
+              </div>
+              <div class="gesture-card accent">
+                <span class="gesture-index">04</span>
+                <div><span id="gestureLabel4">双手下压</span><strong id="gestureAction4">快速下落</strong></div>
+              </div>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <dialog id="helpDialog" class="help-dialog">
+      <button class="dialog-close" id="closeHelpBtn" type="button" aria-label="关闭帮助">×</button>
+      <span class="section-kicker">60 秒上手</span>
+      <h2>先让身体和镜头建立默契</h2>
+      <div class="help-steps">
+        <div><span>1</span><strong>退后半步</strong><p>让头部、肩膀、手腕都出现在安全框内。</p></div>
+        <div><span>2</span><strong>双手高举</strong><p>保持约 0.8 秒，随后会有 3 秒倒计时，避免突然开局。</p></div>
+        <div><span>3</span><strong>小幅试动作</strong><p>先观察“识别反馈”，动作被确认后再继续。</p></div>
+      </div>
+      <p class="help-note">随时可用按钮或键盘操作；累了就把动作幅度切到“轻柔”。</p>
+      <button class="primary-btn" id="helpDoneBtn" type="button">知道了，开始体验</button>
+    </dialog>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

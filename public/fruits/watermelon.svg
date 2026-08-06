@@ -1,0 +1,24 @@
+<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="wm-body" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(88 76) rotate(54) scale(118)">
+      <stop offset="0" stop-color="#FF8FA1"/>
+      <stop offset="0.58" stop-color="#F34B6E"/>
+      <stop offset="1" stop-color="#C9184A"/>
+    </radialGradient>
+    <linearGradient id="wm-rind" x1="30" y1="146" x2="190" y2="86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#14532D"/>
+      <stop offset="0.45" stop-color="#22C55E"/>
+      <stop offset="1" stop-color="#86EFAC"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="110" cy="118" rx="78" ry="72" fill="url(#wm-body)"/>
+  <ellipse cx="110" cy="124" rx="86" ry="79" fill="none" stroke="url(#wm-rind)" stroke-width="14"/>
+  <ellipse cx="86" cy="84" rx="26" ry="18" fill="#FFD3DC" fill-opacity="0.68"/>
+  <g fill="#3F1018">
+    <path d="M71 105c4-8 12-9 14 0-4 6-10 7-14 0Z"/>
+    <path d="M104 128c4-8 12-9 14 0-4 6-10 7-14 0Z"/>
+    <path d="M136 99c4-8 12-9 14 0-4 6-10 7-14 0Z"/>
+    <path d="M84 144c4-8 12-9 14 0-4 6-10 7-14 0Z"/>
+    <path d="M130 142c4-8 12-9 14 0-4 6-10 7-14 0Z"/>
+  </g>
+</svg>

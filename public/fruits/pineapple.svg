@@ -1,0 +1,18 @@
+<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="pi-body" x1="110" y1="52" x2="110" y2="186" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FDE68A"/>
+      <stop offset="0.58" stop-color="#F59E0B"/>
+      <stop offset="1" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+  <path d="M87 58c3-17 13-29 23-36 10 7 20 19 23 36" stroke="#15803D" stroke-width="9" stroke-linecap="round"/>
+  <path d="M69 70c6-18 19-32 39-43 20 11 33 25 39 43" stroke="#22C55E" stroke-width="10" stroke-linecap="round"/>
+  <path d="M110 50c18-18 37-24 56-18-8 18-23 29-48 33l-8-15Z" fill="#16A34A"/>
+  <path d="M110 50c-18-18-37-24-56-18 8 18 23 29 48 33l8-15Z" fill="#22C55E"/>
+  <path d="M70 92c0-26 18-44 40-44s40 18 40 44v39c0 34-18 58-40 58s-40-24-40-58V92Z" fill="url(#pi-body)"/>
+  <path d="M83 70 145 176" stroke="#B45309" stroke-width="5" stroke-opacity="0.5"/>
+  <path d="M138 68 76 176" stroke="#B45309" stroke-width="5" stroke-opacity="0.5"/>
+  <path d="M70 102h80M70 130h80M76 156h68" stroke="#FCD34D" stroke-width="5" stroke-opacity="0.7"/>
+  <ellipse cx="92" cy="96" rx="20" ry="14" fill="#FFF7CC" fill-opacity="0.45"/>
+</svg>

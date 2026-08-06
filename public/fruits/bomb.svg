@@ -1,0 +1,16 @@
+<svg width="220" height="220" viewBox="0 0 220 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="bomb-body" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(84 76) rotate(54) scale(124)">
+      <stop offset="0" stop-color="#9CA3AF"/>
+      <stop offset="0.6" stop-color="#4B5563"/>
+      <stop offset="1" stop-color="#111827"/>
+    </radialGradient>
+  </defs>
+  <circle cx="110" cy="122" r="66" fill="url(#bomb-body)"/>
+  <circle cx="110" cy="122" r="66" fill="none" stroke="#CBD5E1" stroke-opacity="0.28" stroke-width="6"/>
+  <path d="M118 56c6-22 17-34 33-34" stroke="#A16207" stroke-width="8" stroke-linecap="round"/>
+  <rect x="107" y="48" width="22" height="18" rx="6" fill="#FBBF24"/>
+  <path d="M152 28c11 3 18 14 16 26-14-4-23-13-25-27l9 1Z" fill="#FB7185"/>
+  <ellipse cx="88" cy="94" rx="20" ry="14" fill="#E2E8F0" fill-opacity="0.4"/>
+  <text x="110" y="139" text-anchor="middle" font-size="66" font-family="Inter, Arial, sans-serif" font-weight="800" fill="#F8FAFC">!</text>
+</svg>
