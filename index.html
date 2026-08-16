@@ -123,6 +123,27 @@
           </div>
         </section>
 
+        <section class="panel leaderboard-panel" id="leaderboardPanel" aria-labelledby="leaderboardTitle">
+          <div class="leaderboard-heading">
+            <div>
+              <span class="section-kicker" data-i18n="lb.kicker">LEADERBOARD</span>
+              <h2 id="leaderboardTitle" data-i18n="lb.title">分数排行榜</h2>
+              <p data-i18n="lb.subtitle">看看谁是这一轮的体感之王</p>
+            </div>
+          </div>
+
+          <div class="lb-tabs" id="lbTabs" role="tablist" aria-label="选择游戏排行榜" data-i18n-aria="lb.kicker"></div>
+
+          <div class="lb-banner hidden" id="lbBanner">
+            <span class="lb-banner-icon">🏆</span>
+            <span data-i18n="lb.newRecord">新纪录</span>
+          </div>
+
+          <div class="lb-list" id="lbList" aria-live="polite"></div>
+          <p class="lb-empty hidden" id="lbEmpty" data-i18n="lb.empty">还没有成绩，快来创造第一分吧！</p>
+          <p class="lb-error hidden" id="lbError" data-i18n="lb.loadError">排行榜暂时无法连接，请确认后端服务已启动。</p>
+        </section>
+
         <aside class="coach-column">
           <section class="panel camera-panel">
             <div class="compact-heading">

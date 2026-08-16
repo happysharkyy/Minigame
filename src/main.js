@@ -1,6 +1,7 @@
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
 import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
+import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from './leaderboard.js';
 
 const GAME_MODES = {
   TETRIS: 'tetris',
@@ -453,6 +454,7 @@ function spawnPiece() {
     tetrisState.gameOver = true;
     updateGameOverlay(true, t('overlay.gameOver'), t('overlay.restartHintFruit'));
     gameStateBadge.textContent = t('game.state.over');
+    submitScore(currentGame, tetrisState.score);
   }
 }
 
@@ -677,6 +679,7 @@ function endFruitGame(title, hint) {
   updateHud();
   updateGameOverlay(true, title, `${hint} ${t('overlay.restartBackHint')}`);
   gameStateBadge.textContent = t('game.state.over');
+  submitScore(currentGame, fruitState.score);
 }
 
 function randomBetween(min, max) {
@@ -1501,6 +1504,7 @@ function switchGame(mode) {
   applyGameMeta();
   resetCurrentGame();
   drawCurrentGame();
+  setActiveGame(mode);
 }
 
 function resizePoseCanvas() {
@@ -1951,6 +1955,7 @@ function setLanguage(lang) {
   updateLangButton();
   applyGameMeta();
   refreshMessageBoard();
+  refreshLeaderboard();
 
   const state = getCurrentGameState();
 
@@ -2082,6 +2087,7 @@ async function bootstrap() {
   initLanguage();
   updateLangButton();
   initMessageBoard();
+  initLeaderboard();
   await preloadSprites();
   applyGameMeta();
   resetCurrentGame();

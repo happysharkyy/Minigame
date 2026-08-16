@@ -80,6 +80,9 @@ h1, h2, h3, p { margin: 0; }
 
 .topbar {
   min-height: 62px;
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
@@ -87,6 +90,8 @@ h1, h2, h3, p { margin: 0; }
   padding: calc(6px + env(safe-area-inset-top, 0px)) 4px 14px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 16px;
+  background: linear-gradient(rgba(7, 10, 18, .82), rgba(7, 10, 18, .82));
+  backdrop-filter: blur(14px);
 }
 
 .brand {
@@ -105,10 +110,10 @@ h1, h2, h3, p { margin: 0; }
   height: 38px;
   border-radius: 11px;
   color: #071510;
-  background: var(--mint);
+  background: linear-gradient(135deg, #a7ffe9, var(--mint-strong));
   font-size: 1.1rem;
   font-weight: 950;
-  box-shadow: 0 0 24px rgba(139, 245, 220, .26);
+  box-shadow: 0 0 24px rgba(139, 245, 220, .26), inset 0 0 0 1px rgba(255, 255, 255, .18);
 }
 
 .brand strong, .brand small { display: block; }
@@ -161,6 +166,9 @@ button:active { transform: translateY(1px); }
 .experience-layout {
   display: grid;
   grid-template-columns: minmax(252px, 288px) minmax(520px, 1fr) minmax(280px, 318px);
+  grid-template-areas:
+    "library game coach"
+    "library leaderboard coach";
   gap: 16px;
   align-items: start;
 }
@@ -174,9 +182,10 @@ button:active { transform: translateY(1px); }
   backdrop-filter: blur(18px);
 }
 
-.library-panel { padding: 18px 14px 14px; max-height: calc(100vh - 100px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(139,245,220,.25) transparent; }
-.game-panel { padding: 20px; min-width: 0; }
-.coach-column { display: grid; gap: 12px; }
+.library-panel { grid-area: library; padding: 18px 14px 14px; max-height: calc(100vh - 100px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(139,245,220,.25) transparent; }
+.game-panel { grid-area: game; padding: 20px; min-width: 0; }
+.leaderboard-panel { grid-area: leaderboard; padding: 18px 16px; min-width: 0; }
+.coach-column { grid-area: coach; display: grid; gap: 12px; align-content: start; }
 .camera-panel, .comfort-panel, .guide-panel { padding: 16px; }
 
 .section-heading, .compact-heading, .game-header, .quality-row, .game-actions, .setting-copy, .toggle-row {
@@ -331,7 +340,12 @@ button:active { transform: translateY(1px); }
 .overlay-icon { display: grid; place-items: center; width: 54px; height: 54px; margin-bottom: 13px; border: 1px solid rgba(139,245,220,.22); border-radius: 18px; color: var(--mint); background: rgba(139,245,220,.075); font-size: 1.5rem; }
 .game-overlay h3 { font-size: 1.25rem; letter-spacing: -.03em; }
 .game-overlay p { max-width: 285px; margin-top: 8px; color: var(--muted); font-size: .78rem; line-height: 1.6; white-space: pre-line; }
-.overlay-btn { margin-top: 17px; }
+.overlay-btn { margin-top: 17px; animation: overlay-pulse 2.6s ease-in-out infinite; }
+
+@keyframes overlay-pulse {
+  0%, 100% { box-shadow: 0 7px 22px rgba(69, 215, 184, .18); }
+  50% { box-shadow: 0 7px 30px rgba(69, 215, 184, .4); }
+}
 
 .action-toast {
   position: absolute;
@@ -435,6 +449,106 @@ button:active { transform: translateY(1px); }
 .help-steps strong { font-size: .8rem; }
 .help-steps p, .help-note { margin-top: 6px; color: var(--muted); font-size: .7rem; line-height: 1.55; }
 .help-note { margin-bottom: 18px; }
+
+/* ── 排行榜 ─────────────────────────────── */
+.leaderboard-heading h2 { font-size: 1.3rem; letter-spacing: -.035em; }
+.leaderboard-heading p { margin-top: 7px; color: var(--muted); font-size: .78rem; line-height: 1.55; }
+
+.lb-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin: 14px 0 12px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .16);
+}
+
+.lb-tab {
+  min-height: 32px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: .66rem;
+  font-weight: 700;
+  white-space: nowrap;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.lb-tab:hover { color: var(--text); }
+.lb-tab.active { color: #06130f; background: var(--mint); box-shadow: 0 4px 14px rgba(69, 215, 184, .22); }
+
+.lb-list { display: grid; gap: 6px; }
+
+.lb-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255, 255, 255, .025);
+  animation: lb-in 220ms ease both;
+}
+
+@keyframes lb-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.lb-row.me { border-color: rgba(139, 245, 220, .38); background: rgba(139, 245, 220, .07); }
+
+.lb-rank { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: var(--muted); background: rgba(255, 255, 255, .05); font-size: .62rem; font-weight: 800; }
+.lb-rank.top-1 { color: #3a2a05; background: linear-gradient(135deg, #ffd76a, #f5a623); }
+.lb-rank.top-2 { color: #272d3d; background: linear-gradient(135deg, #dbe4f2, #9fb2cc); }
+.lb-rank.top-3 { color: #3b230c; background: linear-gradient(135deg, #ffb98a, #e08a4e); }
+
+.lb-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .75rem; font-weight: 650; }
+.lb-name em { margin-left: 6px; padding: 1px 6px; border-radius: 999px; color: var(--mint); background: rgba(139, 245, 220, .1); border: 1px solid rgba(139, 245, 220, .2); font-size: .56rem; font-style: normal; font-weight: 800; }
+
+.lb-score { color: var(--mint); font-size: .82rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+.lb-time { color: #5c6881; font-size: .58rem; white-space: nowrap; }
+
+.lb-empty, .lb-error {
+  margin-top: 8px;
+  padding: 22px 14px;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  text-align: center;
+  color: var(--muted);
+  font-size: .72rem;
+}
+
+.lb-error { border-color: rgba(255, 123, 139, .25); color: var(--danger); }
+
+.lb-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 215, 106, .35);
+  border-radius: 999px;
+  color: #ffd76a;
+  background: linear-gradient(135deg, rgba(255, 215, 106, .14), rgba(245, 166, 35, .08));
+  font-size: .72rem;
+  font-weight: 800;
+  animation: banner-pop 480ms cubic-bezier(.2, 1.4, .4, 1) both;
+}
+
+.lb-banner-icon { font-size: .9rem; }
+
+@keyframes banner-pop {
+  from { opacity: 0; transform: scale(.85); }
+  to { opacity: 1; transform: scale(1); }
+}
 
 /* ── 留言板 ─────────────────────────────── */
 .message-panel {
@@ -573,8 +687,14 @@ button:active { transform: translateY(1px); }
 }
 
 @media (max-width: 1040px) {
-  .experience-layout { grid-template-columns: 255px minmax(0, 1fr); }
-  .coach-column { grid-column: 1 / -1; grid-template-columns: repeat(3, 1fr); }
+  .experience-layout {
+    grid-template-columns: 255px minmax(0, 1fr);
+    grid-template-areas:
+      "library game"
+      "library leaderboard"
+      "coach coach";
+  }
+  .coach-column { grid-template-columns: repeat(3, 1fr); }
   .library-panel { max-height: none; }
 }
 
@@ -584,11 +704,16 @@ button:active { transform: translateY(1px); }
   .session-status { display: none; }
   .top-actions .icon-btn:first-child { display: none; }
 
-  /* 玩优先:游戏 → 相机 → 本局动作 → 舒适度 → 游戏库 */
-  .experience-layout { grid-template-columns: 1fr; }
-  .game-panel { grid-row: 1; }
-  .coach-column { grid-column: auto; grid-row: 2; grid-template-columns: 1fr 1fr; }
-  .library-panel { grid-row: 3; }
+  /* 玩优先:游戏 → 排行榜 → 相机 → 本局动作 → 舒适度 → 游戏库 */
+  .experience-layout {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "game"
+      "leaderboard"
+      "coach"
+      "library";
+  }
+  .coach-column { grid-template-columns: 1fr 1fr; }
 
   .camera-panel { grid-column: 1 / -1; grid-row: 1; }
   .guide-panel { grid-row: 2; }
@@ -646,13 +771,19 @@ button:active { transform: translateY(1px); }
   .catalog-card { flex: 0 0 200px; }
 }
 
-/* 横屏手机兜底:左侧游戏+游戏库,右侧相机/动作/舒适度 */
+/* 横屏手机兜底:左侧游戏+游戏库+排行榜,右侧相机/动作/舒适度 */
 @media (orientation: landscape) and (max-height: 560px) {
-  .experience-layout { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); grid-template-areas: "game coach" "lib coach"; }
-  .game-panel { grid-area: game; }
-  .coach-column { grid-area: coach; grid-template-columns: 1fr; align-content: start; max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; scrollbar-width: none; }
+  .experience-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+    grid-template-areas:
+      "game coach"
+      "lib coach"
+      "leaderboard coach";
+  }
+  .coach-column { grid-template-columns: 1fr; max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; scrollbar-width: none; }
   .coach-column .camera-panel, .coach-column .guide-panel, .coach-column .comfort-panel { grid-column: auto; grid-row: auto; }
   .library-panel { grid-area: lib; max-height: none; }
+  .leaderboard-panel { grid-area: leaderboard; }
   .library-intro, .library-note { display: none; }
   .catalog-grid { display: flex; gap: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .catalog-card { flex: 0 0 200px; width: auto; }

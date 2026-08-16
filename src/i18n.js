@@ -283,6 +283,16 @@ const I18N = {
     'msg.langZh': '中文留言',
     'msg.langEn': 'English',
 
+    // 排行榜
+    'lb.kicker': '排行榜',
+    'lb.title': '分数排行榜',
+    'lb.subtitle': '看看谁是这一轮的体感之王',
+    'lb.empty': '还没有成绩，快来创造第一分吧！',
+    'lb.loadError': '排行榜暂时无法连接，请确认后端服务已启动（npm run server）。',
+    'lb.you': '你',
+    'lb.defaultName': '体感玩家',
+    'lb.newRecord': '新纪录',
+
     // 页脚
     'footer.tagline': '用身体重新发现游戏的乐趣',
     'footer.sub': '姿态识别 · 本地数据存储 · 建议在明亮环境下体验',
@@ -565,6 +575,16 @@ const I18N = {
     'msg.daysAgo': '{n} d ago',
     'msg.langZh': 'Chinese',
     'msg.langEn': 'English',
+
+    // Leaderboard
+    'lb.kicker': 'LEADERBOARD',
+    'lb.title': 'Score Leaderboard',
+    'lb.subtitle': 'See who rules the arena',
+    'lb.empty': 'No scores yet. Be the first to set one!',
+    'lb.loadError': 'Leaderboard is temporarily unavailable. Make sure the backend is running (npm run server).',
+    'lb.you': 'You',
+    'lb.defaultName': 'Player',
+    'lb.newRecord': 'New record',
 
     // Footer
     'footer.tagline': 'Rediscover the joy of games with your body',
