@@ -4,6 +4,9 @@ node_modules/
 # Build output
 dist/
 
+# Runtime data (messages & leaderboard, auto-created by server.js)
+data/
+
 # Logs
 *.log
 npm-debug.log*

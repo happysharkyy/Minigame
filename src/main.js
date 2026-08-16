@@ -1,5 +1,6 @@
 import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
+import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
 
 const GAME_MODES = {
   TETRIS: 'tetris',
@@ -1949,6 +1950,7 @@ function setLanguage(lang) {
   setLang(lang);
   updateLangButton();
   applyGameMeta();
+  refreshMessageBoard();
 
   const state = getCurrentGameState();
 
@@ -2079,6 +2081,7 @@ function gameLoop(timestamp) {
 async function bootstrap() {
   initLanguage();
   updateLangButton();
+  initMessageBoard();
   await preloadSprites();
   applyGameMeta();
   resetCurrentGame();

@@ -210,6 +210,41 @@
           </section>
         </aside>
       </main>
+
+      <section class="panel message-panel" id="messagePanel" aria-labelledby="messageTitle">
+        <div class="message-heading">
+          <div>
+            <span class="section-kicker" data-i18n="msg.kicker">COMMUNITY</span>
+            <h2 id="messageTitle" data-i18n="msg.title">留言板</h2>
+            <p data-i18n="msg.subtitle">分享你的体验、建议或问题，帮助我们一起变得更好。</p>
+          </div>
+          <span class="count-pill" id="messageCount">0</span>
+        </div>
+
+        <form class="message-form" id="messageForm" novalidate>
+          <label class="field-name">
+            <span class="sr-only" data-i18n="msg.nameLabel">昵称</span>
+            <input id="messageName" type="text" maxlength="24" autocomplete="nickname" data-i18n-placeholder="msg.namePlaceholder" placeholder="你的昵称" />
+          </label>
+          <label class="field-content">
+            <span class="sr-only" data-i18n="msg.contentLabel">留言内容</span>
+            <textarea id="messageContent" rows="3" maxlength="500" data-i18n-placeholder="msg.contentPlaceholder" placeholder="写下你的留言或建议…"></textarea>
+          </label>
+          <div class="message-form-foot">
+            <span class="char-count" id="messageCharCount">0/500</span>
+            <button class="primary-btn" type="submit" id="messageSubmitBtn" data-i18n="msg.submit">发布留言</button>
+          </div>
+        </form>
+
+        <div class="message-list" id="messageList" aria-live="polite"></div>
+        <p class="message-empty hidden" id="messageEmpty" data-i18n="msg.empty">还没有留言，来抢沙发吧！</p>
+        <p class="message-error hidden" id="messageError" data-i18n="msg.loadError">留言板暂时无法连接，请确认后端服务已启动。</p>
+      </section>
+
+      <footer class="site-footer">
+        <p>MOVE ARCADE · <span data-i18n="footer.tagline">用身体重新发现游戏的乐趣</span></p>
+        <p class="footer-sub" data-i18n="footer.sub">姿态识别 · 本地数据存储 · 建议在明亮环境下体验</p>
+      </footer>
     </div>
 
     <dialog id="helpDialog" class="help-dialog">

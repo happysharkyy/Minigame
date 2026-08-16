@@ -436,6 +436,136 @@ button:active { transform: translateY(1px); }
 .help-steps p, .help-note { margin-top: 6px; color: var(--muted); font-size: .7rem; line-height: 1.55; }
 .help-note { margin-bottom: 18px; }
 
+/* ── 留言板 ─────────────────────────────── */
+.message-panel {
+  margin-top: 16px;
+  padding: 22px 20px 24px;
+}
+
+.message-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.message-heading h2 { font-size: 1.3rem; letter-spacing: -.035em; }
+.message-heading p { margin-top: 7px; color: var(--muted); font-size: .78rem; line-height: 1.55; max-width: 620px; }
+
+.message-form {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) 1fr;
+  gap: 10px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .024);
+}
+
+.field-name input, .field-content textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #0d1220;
+  color: var(--text);
+  font-size: .8rem;
+  padding: 10px 12px;
+  resize: vertical;
+  transition: border-color 150ms ease;
+}
+
+.field-name input { height: 42px; }
+.field-content textarea { min-height: 42px; }
+.field-name input:focus, .field-content textarea:focus { outline: none; border-color: var(--line-strong); }
+.field-name input::placeholder, .field-content textarea::placeholder { color: #5b6782; }
+
+.message-form-foot {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.char-count { color: var(--muted); font-size: .66rem; }
+
+.message-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.message-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 11px;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .028);
+  animation: msg-in 220ms ease both;
+}
+
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.message-avatar {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  color: #071510;
+  background: var(--mint);
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.message-item:nth-child(3n) .message-avatar { background: var(--violet); color: #0b0920; }
+.message-item:nth-child(3n + 1) .message-avatar { background: var(--orange); color: #1d1202; }
+
+.message-body { min-width: 0; }
+.message-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.message-meta strong { font-size: .78rem; }
+.message-lang { padding: 2px 7px; border-radius: 999px; font-size: .56rem; font-weight: 700; }
+.message-lang.zh { color: var(--mint); background: rgba(139, 245, 220, .08); border: 1px solid rgba(139, 245, 220, .14); }
+.message-lang.en { color: #c4baff; background: rgba(169, 155, 255, .08); border: 1px solid rgba(169, 155, 255, .16); }
+.message-time { margin-left: auto; color: #66718a; font-size: .6rem; white-space: nowrap; }
+.message-text { margin-top: 5px; color: #cdd6e6; font-size: .78rem; line-height: 1.55; overflow-wrap: break-word; white-space: pre-wrap; }
+
+.message-empty, .message-error {
+  margin-top: 16px;
+  padding: 26px 16px;
+  border: 1px dashed var(--line);
+  border-radius: 13px;
+  text-align: center;
+  color: var(--muted);
+  font-size: .76rem;
+}
+
+.message-error { border-color: rgba(255, 123, 139, .25); color: var(--danger); }
+
+.message-loading { margin-top: 16px; text-align: center; color: var(--muted); font-size: .76rem; }
+
+.hidden { display: none !important; }
+
+/* ── 页脚 ─────────────────────────────── */
+.site-footer {
+  margin-top: 18px;
+  padding: 16px 6px 4px;
+  border-top: 1px solid var(--line);
+  text-align: center;
+  color: #8c99b3;
+  font-size: .7rem;
+  line-height: 1.7;
+}
+
+.site-footer .footer-sub { color: #5c6881; font-size: .62rem; }
+
 @media (max-width: 1280px) {
   .experience-layout { grid-template-columns: 250px minmax(470px, 1fr) 285px; }
   .game-panel { padding: 16px; }
@@ -488,6 +618,12 @@ button:active { transform: translateY(1px); }
   .help-dialog { padding: 20px; }
   .help-steps { grid-template-columns: 1fr; }
   .help-steps span { margin-bottom: 8px; }
+
+  /* 留言板:表单与列表降为单列 */
+  .message-form { grid-template-columns: 1fr; }
+  .message-list { grid-template-columns: 1fr; }
+  .message-form-foot { grid-column: auto; }
+  .message-panel { padding: 18px 14px 20px; }
 }
 
 @media (max-width: 480px) {

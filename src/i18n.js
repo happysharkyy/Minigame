@@ -258,6 +258,34 @@ const I18N = {
     'meta.guard.g3a': '扩大防守范围',
     'meta.guard.g4l': '保持入镜',
     'meta.guard.g4a': '持续追踪双手',
+
+    // 留言板
+    'msg.kicker': '社区留言',
+    'msg.title': '留言板',
+    'msg.subtitle': '分享你的体验、建议或问题，帮助我们一起变得更好。',
+    'msg.nameLabel': '昵称',
+    'msg.namePlaceholder': '你的昵称',
+    'msg.contentLabel': '留言内容',
+    'msg.contentPlaceholder': '写下你的留言或建议…',
+    'msg.submit': '发布留言',
+    'msg.count': '{count} 条留言',
+    'msg.empty': '还没有留言，来抢沙发吧！',
+    'msg.loading': '正在加载留言…',
+    'msg.loadError': '留言板暂时无法连接，请确认后端服务已启动（npm run server）。',
+    'msg.sendError': '发送失败，请稍后再试。',
+    'msg.success': '留言发布成功！',
+    'msg.nameRequired': '请输入昵称',
+    'msg.contentRequired': '请输入留言内容',
+    'msg.justNow': '刚刚',
+    'msg.minutesAgo': '{n} 分钟前',
+    'msg.hoursAgo': '{n} 小时前',
+    'msg.daysAgo': '{n} 天前',
+    'msg.langZh': '中文留言',
+    'msg.langEn': 'English',
+
+    // 页脚
+    'footer.tagline': '用身体重新发现游戏的乐趣',
+    'footer.sub': '姿态识别 · 本地数据存储 · 建议在明亮环境下体验',
   },
 
   en: {
@@ -513,6 +541,34 @@ const I18N = {
     'meta.guard.g3a': 'Widen your coverage',
     'meta.guard.g4l': 'Stay in frame',
     'meta.guard.g4a': 'Keep both hands tracked',
+
+    // Message board
+    'msg.kicker': 'COMMUNITY',
+    'msg.title': 'Message Board',
+    'msg.subtitle': 'Share your experience, suggestions or questions to help us improve.',
+    'msg.nameLabel': 'Name',
+    'msg.namePlaceholder': 'Your name',
+    'msg.contentLabel': 'Message',
+    'msg.contentPlaceholder': 'Leave a message or suggestion…',
+    'msg.submit': 'Post',
+    'msg.count': '{count} messages',
+    'msg.empty': 'No messages yet. Be the first to leave one!',
+    'msg.loading': 'Loading messages…',
+    'msg.loadError': 'Message board is temporarily unavailable. Make sure the backend is running (npm run server).',
+    'msg.sendError': 'Failed to send. Please try again later.',
+    'msg.success': 'Message posted!',
+    'msg.nameRequired': 'Please enter your name',
+    'msg.contentRequired': 'Please enter a message',
+    'msg.justNow': 'Just now',
+    'msg.minutesAgo': '{n} min ago',
+    'msg.hoursAgo': '{n} h ago',
+    'msg.daysAgo': '{n} d ago',
+    'msg.langZh': 'Chinese',
+    'msg.langEn': 'English',
+
+    // Footer
+    'footer.tagline': 'Rediscover the joy of games with your body',
+    'footer.sub': 'Pose tracking · Local data storage · Best in a bright room',
   },
 };
 
@@ -539,6 +595,9 @@ function applyStaticTranslations() {
   });
   document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
     el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
   });
 }
 
