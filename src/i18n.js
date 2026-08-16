@@ -8,6 +8,8 @@ const I18N = {
   zh: {
     // 页面标题 / 品牌
     'app.title': 'MOVE ARCADE · 体感游戏中心',
+    'seo.title': 'MOVE ARCADE · 体感游戏中心',
+    'seo.desc': '无需手柄，用摄像头和身体动作游玩俄罗斯方块、切西瓜、星光接力、能量守门员等体感小游戏。支持 PC 与移动端，中英双语，打开即玩。',
     'brand.aria': 'MOVE ARCADE 首页',
     'brand.tagline': '让身体成为手柄',
     'session.status': '正在准备体感空间',
@@ -303,6 +305,8 @@ const I18N = {
   en: {
     // Page title / brand
     'app.title': 'MOVE ARCADE · Motion Game Hub',
+    'seo.title': 'MOVE ARCADE · Motion Game Hub',
+    'seo.desc': 'Play motion-sensing arcade games (Tetris, Fruit Ninja, Star Relay, Energy Goalkeeper) using just your webcam and body gestures — no controller needed. Works on PC and mobile, bilingual ZH/EN, play instantly.',
     'brand.aria': 'MOVE ARCADE home',
     'brand.tagline': 'Make your body the controller',
     'session.status': 'Preparing motion space',
@@ -622,6 +626,19 @@ function applyStaticTranslations() {
   });
   document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
     el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder));
+  });
+
+  // 同步 SEO meta 标签（description / OG / Twitter）跟随当前语言
+  const seoMetaMap = {
+    'meta[name="description"]': 'seo.desc',
+    'meta[property="og:title"]': 'seo.title',
+    'meta[property="og:description"]': 'seo.desc',
+    'meta[name="twitter:title"]': 'seo.title',
+    'meta[name="twitter:description"]': 'seo.desc',
+  };
+  Object.entries(seoMetaMap).forEach(([selector, key]) => {
+    const el = document.querySelector(selector);
+    if (el) el.setAttribute('content', t(key));
   });
 }
 
