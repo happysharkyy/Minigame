@@ -65,6 +65,32 @@
           </div>
         </aside>
 
+        <section class="panel camera-panel">
+          <div class="compact-heading">
+            <div>
+              <span class="section-kicker">BODY TRACKING</span>
+              <h2 data-i18n="cameraPanel.title">体感镜头</h2>
+            </div>
+            <span class="camera-badge" id="cameraStatus">等待授权</span>
+          </div>
+
+          <div class="camera-stage">
+            <video id="camera" autoplay playsinline muted></video>
+            <canvas id="poseCanvas"></canvas>
+            <div class="safe-frame"><span data-i18n="cameraPanel.safeFrame">站在框内 · 保持上半身入镜</span></div>
+            <div class="scanline"></div>
+          </div>
+
+          <div class="tracking-summary">
+            <div class="quality-row">
+              <span data-i18n="cameraPanel.quality">识别质量</span>
+              <strong id="trackingQuality" data-i18n="cameraPanel.trackingQuality">准备中</strong>
+            </div>
+            <div class="quality-meter"><i id="qualityMeter"></i></div>
+            <p id="trackingTip" data-i18n="cameraPanel.tip">摄像头开启后，这里会实时提示站位。</p>
+          </div>
+        </section>
+
         <section class="panel game-panel">
           <div class="game-header">
             <div>
@@ -145,32 +171,6 @@
         </section>
 
         <aside class="coach-column">
-          <section class="panel camera-panel">
-            <div class="compact-heading">
-              <div>
-                <span class="section-kicker">BODY TRACKING</span>
-                <h2 data-i18n="cameraPanel.title">体感镜头</h2>
-              </div>
-              <span class="camera-badge" id="cameraStatus">等待授权</span>
-            </div>
-
-            <div class="camera-stage">
-              <video id="camera" autoplay playsinline muted></video>
-              <canvas id="poseCanvas"></canvas>
-              <div class="safe-frame"><span data-i18n="cameraPanel.safeFrame">站在框内 · 保持上半身入镜</span></div>
-              <div class="scanline"></div>
-            </div>
-
-            <div class="tracking-summary">
-              <div class="quality-row">
-                <span data-i18n="cameraPanel.quality">识别质量</span>
-                <strong id="trackingQuality" data-i18n="cameraPanel.trackingQuality">准备中</strong>
-              </div>
-              <div class="quality-meter"><i id="qualityMeter"></i></div>
-              <p id="trackingTip" data-i18n="cameraPanel.tip">摄像头开启后，这里会实时提示站位。</p>
-            </div>
-          </section>
-
           <section class="panel comfort-panel">
             <div class="compact-heading">
               <div>

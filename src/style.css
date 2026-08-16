@@ -167,7 +167,7 @@ button:active { transform: translateY(1px); }
   display: grid;
   grid-template-columns: minmax(252px, 288px) minmax(520px, 1fr) minmax(280px, 318px);
   grid-template-areas:
-    "library game coach"
+    "library game camera"
     "library leaderboard coach";
   gap: 16px;
   align-items: start;
@@ -183,6 +183,7 @@ button:active { transform: translateY(1px); }
 }
 
 .library-panel { grid-area: library; padding: 18px 14px 14px; max-height: calc(100vh - 100px); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(139,245,220,.25) transparent; }
+.camera-panel { grid-area: camera; }
 .game-panel { grid-area: game; padding: 20px; min-width: 0; }
 .leaderboard-panel { grid-area: leaderboard; padding: 18px 16px; min-width: 0; }
 .coach-column { grid-area: coach; display: grid; gap: 12px; align-content: start; }
@@ -692,9 +693,10 @@ button:active { transform: translateY(1px); }
     grid-template-areas:
       "library game"
       "library leaderboard"
+      "camera camera"
       "coach coach";
   }
-  .coach-column { grid-template-columns: repeat(3, 1fr); }
+  .coach-column { grid-template-columns: repeat(2, 1fr); }
   .library-panel { max-height: none; }
 }
 
@@ -704,20 +706,19 @@ button:active { transform: translateY(1px); }
   .session-status { display: none; }
   .top-actions .icon-btn:first-child { display: none; }
 
-  /* 玩优先:游戏 → 排行榜 → 相机 → 本局动作 → 舒适度 → 游戏库 */
+  /* 玩优先(移动端):摄像头置顶 → 游戏 → 本局动作+舒适度 → 排行榜 → 游戏库
+     先把画面呈现给用户,确认自己已入镜,再开始游戏 */
   .experience-layout {
     grid-template-columns: 1fr;
     grid-template-areas:
+      "camera"
       "game"
-      "leaderboard"
       "coach"
+      "leaderboard"
       "library";
   }
   .coach-column { grid-template-columns: 1fr 1fr; }
-
-  .camera-panel { grid-column: 1 / -1; grid-row: 1; }
-  .guide-panel { grid-row: 2; }
-  .comfort-panel { grid-row: 2; }
+  .guide-panel { order: -1; }
 
   /* 游戏库横向滚动 */
   .catalog-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -762,26 +763,24 @@ button:active { transform: translateY(1px); }
   .game-actions .primary-btn { grid-column: 1 / -1; }
 }
 
-/* 窄屏:教练列退回单列,顺序固定 相机→本局动作→舒适度 */
+/* 窄屏:教练列退回单列,顺序固定 本局动作→舒适度 */
 @media (max-width: 400px) {
   .coach-column { grid-template-columns: 1fr; }
-  .camera-panel { grid-column: auto; grid-row: 1; }
-  .guide-panel { grid-row: 2; }
-  .comfort-panel { grid-row: 3; }
+  .guide-panel { grid-row: 1; }
+  .comfort-panel { grid-row: 2; }
   .catalog-card { flex: 0 0 200px; }
 }
 
-/* 横屏手机兜底:左侧游戏+游戏库+排行榜,右侧相机/动作/舒适度 */
+/* 横屏手机兜底:左侧游戏+游戏库+排行榜,右侧摄像头+动作/舒适度 */
 @media (orientation: landscape) and (max-height: 560px) {
   .experience-layout {
     grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
     grid-template-areas:
-      "game coach"
+      "game camera"
       "lib coach"
       "leaderboard coach";
   }
   .coach-column { grid-template-columns: 1fr; max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; scrollbar-width: none; }
-  .coach-column .camera-panel, .coach-column .guide-panel, .coach-column .comfort-panel { grid-column: auto; grid-row: auto; }
   .library-panel { grid-area: lib; max-height: none; }
   .leaderboard-panel { grid-area: leaderboard; }
   .library-intro, .library-note { display: none; }
