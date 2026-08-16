@@ -158,6 +158,8 @@ const I18N = {
     'cameraPanel.quality': '识别质量',
     'cameraPanel.trackingQuality': '准备中',
     'cameraPanel.tip': '摄像头开启后，这里会实时提示站位。',
+    'cameraPanel.expand': '展开摄像头',
+    'cameraPanel.collapse': '收起摄像头',
 
     // 舒适度面板
     'comfort.title': '操作舒适度',
@@ -451,6 +453,8 @@ const I18N = {
     'cameraPanel.quality': 'Tracking quality',
     'cameraPanel.trackingQuality': 'Preparing',
     'cameraPanel.tip': 'Once the camera is on, position tips appear here in real time.',
+    'cameraPanel.expand': 'Expand camera',
+    'cameraPanel.collapse': 'Collapse camera',
 
     // Comfort panel
     'comfort.title': 'Comfort',

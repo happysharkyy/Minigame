@@ -280,6 +280,39 @@ let modelLoading = false;
 function setCameraStatus(key, params) {
   lastCameraStatus = { key, params };
   cameraStatus.textContent = params ? tf(key, params) : t(key);
+  const dot = document.querySelector('#cameraDot');
+  if (dot) {
+    let state = 'warn';
+    if (key.includes('tracking') || key.includes('connected')) state = 'ok';
+    else if (key.includes('fail') || key.includes('modelFail')) state = 'err';
+    dot.className = `camera-dot ${state}`;
+  }
+}
+
+function initCameraDock() {
+  const dockBtn = document.querySelector('#cameraDockBtn');
+  const camPanel = document.querySelector('.camera-panel');
+  if (!dockBtn || !camPanel) return;
+  const mq = window.matchMedia('(max-width: 760px)');
+  const syncLabel = () => {
+    const expanded = camPanel.classList.contains('expanded');
+    dockBtn.setAttribute('aria-label', expanded ? t('cameraPanel.collapse') : t('cameraPanel.expand'));
+  };
+  const toggle = () => {
+    camPanel.classList.toggle('expanded');
+    syncLabel();
+  };
+  dockBtn.addEventListener('click', (event) => {
+    event.stopPropagation();
+    toggle();
+  });
+  camPanel.addEventListener('click', (event) => {
+    if (event.target.closest('#cameraDockBtn')) return;
+    toggle();
+  });
+  window.addEventListener('resize', () => {
+    if (!mq.matches) camPanel.classList.remove('expanded');
+  });
 }
 
 function updateLangButton() {
@@ -2088,6 +2121,7 @@ async function bootstrap() {
   updateLangButton();
   initMessageBoard();
   initLeaderboard();
+  initCameraDock();
   await preloadSprites();
   applyGameMeta();
   resetCurrentGame();

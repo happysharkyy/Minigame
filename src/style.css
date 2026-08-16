@@ -402,6 +402,43 @@ button:active { transform: translateY(1px); }
 .scanline { position: absolute; inset: 0; opacity: .35; background: linear-gradient(transparent 46%, rgba(139,245,220,.08) 50%, transparent 54%); animation: scan 5s linear infinite; pointer-events: none; }
 @keyframes scan { from { transform: translateY(-75%); } to { transform: translateY(75%); } }
 
+/* 摄像头小窗:状态灯 + 展开按钮(桌面端隐藏) */
+.camera-dot {
+  display: none;
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 2;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #8a94ab;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, .35);
+}
+.camera-dot.ok { background: var(--mint); box-shadow: 0 0 0 3px rgba(0,0,0,.3), 0 0 10px rgba(139,245,220,.8); }
+.camera-dot.warn { background: #ffb454; box-shadow: 0 0 0 3px rgba(0,0,0,.3); }
+.camera-dot.err { background: #ff7b8b; box-shadow: 0 0 0 3px rgba(0,0,0,.3); }
+
+.camera-dock-btn {
+  display: none;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 9px;
+  color: rgba(255, 255, 255, .9);
+  background: rgba(5, 8, 17, .55);
+  backdrop-filter: blur(6px);
+  cursor: pointer;
+}
+.camera-dock-btn:hover { background: rgba(5, 8, 17, .82); }
+.camera-dock-btn svg { width: 15px; height: 15px; transition: transform 220ms ease; }
+
+
 .tracking-summary { margin-top: 11px; }
 .quality-row { font-size: .68rem; }
 .quality-row span { color: var(--muted); }
@@ -706,19 +743,63 @@ button:active { transform: translateY(1px); }
   .session-status { display: none; }
   .top-actions .icon-btn:first-child { display: none; }
 
-  /* 玩优先(移动端):摄像头置顶 → 游戏 → 本局动作+舒适度 → 排行榜 → 游戏库
-     先把画面呈现给用户,确认自己已入镜,再开始游戏 */
+  /* 移动端:游戏画面为主,摄像头变为右上角"画中画小窗"
+     主画面优先,同时随时能看到自己是否入镜;点小窗可展开完整信息 */
   .experience-layout {
     grid-template-columns: 1fr;
     grid-template-areas:
-      "camera"
       "game"
-      "coach"
       "leaderboard"
+      "coach"
       "library";
   }
   .coach-column { grid-template-columns: 1fr 1fr; }
   .guide-panel { order: -1; }
+
+  /* 摄像头小窗(固定浮动) */
+  .camera-panel {
+    position: fixed;
+    top: calc(68px + env(safe-area-inset-top, 0px));
+    right: 12px;
+    z-index: 45;
+    width: 150px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, .55);
+    cursor: pointer;
+    animation: cam-in 320ms ease both;
+  }
+
+  @keyframes cam-in {
+    from { opacity: 0; transform: translateY(-8px) scale(.94); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .camera-panel .compact-heading,
+  .camera-panel .tracking-summary,
+  .camera-panel .safe-frame { display: none; }
+
+  .camera-panel .camera-stage {
+    margin-top: 0;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .camera-dot { display: block; }
+  .camera-dock-btn { display: grid; }
+
+  /* 展开态:显示完整镜头信息 */
+  .camera-panel.expanded {
+    width: min(88vw, 360px);
+    cursor: default;
+    padding: 4px;
+  }
+  .camera-panel.expanded .compact-heading { display: flex; padding: 12px 12px 0; }
+  .camera-panel.expanded .tracking-summary { display: block; margin-top: 10px; padding: 0 12px 12px; }
+  .camera-panel.expanded .safe-frame { display: block; }
+  .camera-panel.expanded .camera-stage { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; }
+  .camera-panel.expanded .camera-dock-btn svg { transform: rotate(180deg); }
 
   /* 游戏库横向滚动 */
   .catalog-grid { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
@@ -783,6 +864,30 @@ button:active { transform: translateY(1px); }
   .coach-column { grid-template-columns: 1fr; max-height: calc(100vh - 20px); max-height: calc(100dvh - 20px); overflow-y: auto; scrollbar-width: none; }
   .library-panel { grid-area: lib; max-height: none; }
   .leaderboard-panel { grid-area: leaderboard; }
+
+  /* 横屏下摄像头回到右列,还原为普通面板(取消小窗) */
+  .camera-panel {
+    position: relative;
+    top: auto;
+    right: auto;
+    width: auto;
+    padding: 16px;
+    overflow: visible;
+    border-radius: 20px;
+    cursor: default;
+    animation: none;
+    box-shadow: var(--shadow);
+  }
+  .camera-panel .compact-heading { display: flex; padding: 0; }
+  .camera-panel .tracking-summary { display: block; margin-top: 11px; padding: 0; }
+  .camera-panel .safe-frame { display: block; }
+  .camera-panel .camera-stage { margin-top: 12px; border: 1px solid var(--line); border-radius: 13px; }
+  .camera-dot, .camera-dock-btn { display: none; }
+  .camera-panel.expanded { width: auto; padding: 16px; }
+  .camera-panel.expanded .compact-heading { padding: 0; }
+  .camera-panel.expanded .tracking-summary { margin-top: 11px; padding: 0; }
+  .camera-panel.expanded .camera-stage { margin-top: 12px; border: 1px solid var(--line); border-radius: 13px; }
+  .camera-panel.expanded .camera-dock-btn svg { transform: none; }
   .library-intro, .library-note { display: none; }
   .catalog-grid { display: flex; gap: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .catalog-card { flex: 0 0 200px; width: auto; }
