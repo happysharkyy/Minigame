@@ -92,7 +92,8 @@ function setSubmitting(value) {
   submitting = value;
   if (!els) return;
   els.submitBtn.disabled = value;
-  els.submitBtn.textContent = value ? '…' : t('msg.submit');
+  // 仅在开始提交时改文案, 结束时保留成功/失败提示, 由 setTimeout 恢复
+  if (value) els.submitBtn.textContent = '…';
 }
 
 async function handleSubmit(event) {
