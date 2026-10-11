@@ -98,6 +98,7 @@ const I18N = {
     'result.newRecord': '🏆 新纪录！',
     'result.gap': '差 {n} 分破纪录',
     'result.today': '今日第 {n} 局',
+    'result.streak': '连续第 {n} 天',
     'result.reviewNudge': '玩得怎么样？给个评分 →',
 
     // 统计
@@ -465,6 +466,7 @@ const I18N = {
     'result.newRecord': '🏆 New record!',
     'result.gap': '{n} short of your best',
     'result.today': 'Round {n} today',
+    'result.streak': '{n}-day streak',
     'result.reviewNudge': 'How was it? Leave a rating →',
 
     // Stats

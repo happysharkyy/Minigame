@@ -3,7 +3,7 @@ import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
 import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
 import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from './leaderboard.js';
 import { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated, scrollToReviewForm } from './reviewBoard.js';
-import { computeRoundResult } from './roundResult.js';
+import { computeRoundResult, computeStreak } from './roundResult.js';
 import { initSfx, isEnabled as sfxEnabled, play as playSfx, setEnabled as setSfxEnabled } from './sfx.js';
 
 const GAME_MODES = {
@@ -51,6 +51,7 @@ const GAME_USAGE_KEY = 'move-arcade-game-usage';
 const COMFORT_KEY = 'move-arcade-comfort';
 const BEST_KEY = 'move-arcade-best';
 const TODAY_KEY = 'move-arcade-today';
+const STREAK_KEY = 'move-arcade-streak';
 
 
 
@@ -1667,6 +1668,14 @@ function bumpTodayRounds() {
   return count;
 }
 
+// 连续游玩天数: 一天玩多局只算一天, 断档就从头算(纯逻辑在 roundResult.js, 有单测)
+function bumpStreak() {
+  const saved = readStoredJson(STREAK_KEY, null) || {};
+  const next = computeStreak({ lastDate: saved.lastDate, days: saved.days, today: todayStamp() });
+  writeStoredJson(STREAK_KEY, { lastDate: next.lastDate, days: next.days });
+  return next.days;
+}
+
 function getPersonalBest(game) {
   const all = readStoredJson(BEST_KEY, {});
   return Number(all?.[game]) || 0;
@@ -1688,7 +1697,7 @@ let lastRoundResult = null;
 
 function renderRoundResult() {
   if (!overlayResult || !lastRoundResult) return;
-  const { score, best, isRecord, gap, rounds, showReview } = lastRoundResult;
+  const { score, best, isRecord, gap, rounds, streak, showReview } = lastRoundResult;
 
   resultScore.textContent = String(score);
   resultBest.textContent = tf('result.best', { n: best });
@@ -1702,7 +1711,10 @@ function renderRoundResult() {
     resultGap.classList.add('hidden');
   }
 
-  resultToday.textContent = tf('result.today', { n: rounds });
+  // 连续天数只在 >= 2 时才提 —— 第一次来就说'连续第 1 天'没有意义
+  const todayParts = [tf('result.today', { n: rounds })];
+  if (Number(streak) >= 2) todayParts.push(tf('result.streak', { n: streak }));
+  resultToday.textContent = todayParts.join(' · ');
   resultReviewBtn.classList.toggle('hidden', !showReview);
 
   overlayResult.classList.remove('hidden');
@@ -1717,6 +1729,7 @@ function showRoundResult(game, score) {
     rounds: bumpTodayRounds(),
     hasRated: hasRated(),
   });
+  result.streak = bumpStreak();
 
   if (result.isRecord) setPersonalBest(game, result.score);
 

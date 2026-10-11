@@ -461,6 +461,15 @@ button:active { transform: translateY(1px); }
 .primary-btn { color: #06130f; background: var(--mint); box-shadow: 0 7px 22px rgba(69,215,184,.18); }
 .primary-btn:hover { background: #a7ffe9; }
 .secondary-btn { color: #c5cede; }
+
+/* 禁用态必须看得出来: 否则"暂停"在已结束/未开始时点不动却看着能点 */
+.primary-btn:disabled, .secondary-btn:disabled, .icon-btn:disabled, .square-btn:disabled {
+  opacity: .38;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+.primary-btn:disabled:hover { background: var(--mint); }
+.secondary-btn:disabled:hover { border-color: var(--line); }
 .keyboard-tip { margin-left: auto; color: #69758c; font-size: .62rem; }
 
 .camera-stage {

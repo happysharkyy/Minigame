@@ -68,6 +68,9 @@ const openSelector = openIndex !== -1 ? args[openIndex + 1] : null;
 // --click "#mainStartBtn": 截图与测量前先点一下, 用来检查"游戏进行中"这类状态的布局
 const clickIndex = args.indexOf('--click');
 const clickSelector = clickIndex !== -1 ? args[clickIndex + 1] : null;
+// --wait 50000: 额外等一段时间再测量(例如等切西瓜一局真的跑完)
+const waitIndex = args.indexOf('--wait');
+const extraWaitMs = waitIndex !== -1 ? Number(args[waitIndex + 1]) || 0 : 0;
 
 let viewport;
 if (PRESETS[presetName]) {
@@ -214,8 +217,22 @@ await loaded;
 // 姿态模型是异步加载的, 等它把遮罩换掉再截图
 await delay(4500);
 
-// ── 量布局 ──────────────────────────────────
-// 先点一下(如果要求), 让测量拿到的就是点击后的状态
+// ── 交互与测量 ──────────────────────────────
+// 顺序: 先铺状态(展开折叠 / 执行自定义脚本), 再交互(点击 / 等待), 最后测量与截图。
+// 这样 --eval 里 seed 的状态能被 --click 与 --wait 作用到, 测量拿到的是最终状态。
+if (openSelector) {
+  await send('Runtime.evaluate', {
+    expression: `document.querySelectorAll(${JSON.stringify(openSelector)}).forEach((el) => { if (el.tagName === 'DETAILS') el.open = true; })`,
+  }, sessionId);
+  await delay(300);
+}
+
+let extra = null;
+if (customEval) {
+  const r = await send('Runtime.evaluate', { expression: customEval, returnByValue: true }, sessionId);
+  extra = r.result?.value ?? r.result?.description ?? r.exceptionDetails?.text;
+}
+
 if (clickSelector) {
   const clicked = await send('Runtime.evaluate', {
     expression: `(() => { const el = document.querySelector(${JSON.stringify(clickSelector)}); if (!el) return 'NOT_FOUND'; el.click(); return 'clicked'; })()`,
@@ -223,6 +240,10 @@ if (clickSelector) {
   }, sessionId);
   console.log(`--click ${clickSelector}: ${clicked.result?.value}`);
   await delay(800);
+}
+if (extraWaitMs > 0) {
+  console.log(`额外等待 ${extraWaitMs}ms …`);
+  await delay(extraWaitMs);
 }
 
 const METRICS = `(() => {
@@ -255,12 +276,6 @@ const METRICS = `(() => {
 
 const metricsResult = await send('Runtime.evaluate', { expression: METRICS, returnByValue: true }, sessionId);
 const metrics = metricsResult.result?.value;
-
-let extra = null;
-if (customEval) {
-  const r = await send('Runtime.evaluate', { expression: customEval, returnByValue: true }, sessionId);
-  extra = r.result?.value ?? r.result?.description ?? r.exceptionDetails?.text;
-}
 
 // 任意元素超出视口右边界 = 横向溢出/被裁切。
 // 但要排除"本来就在横向滚动容器里"的元素(例如手机端横向滚动的游戏库卡片),
@@ -297,12 +312,6 @@ const overflowing = overflowResult.result?.value || [];
 // ── 截图 ────────────────────────────────────
 fs.mkdirSync(outDir, { recursive: true });
 
-if (openSelector) {
-  await send('Runtime.evaluate', {
-    expression: `document.querySelectorAll(${JSON.stringify(openSelector)}).forEach((el) => { if (el.tagName === 'DETAILS') el.open = true; })`,
-  }, sessionId);
-  await delay(300);
-}
 if (scrollTo) {
   await send('Runtime.evaluate', {
     expression: `(() => { const el = document.querySelector(${JSON.stringify(scrollTo)}); if (el) el.scrollIntoView({ block: 'start' }); return !!el; })()`,

@@ -2,7 +2,7 @@
 // 运行: npm test
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { computeRoundResult } from '../src/roundResult.js';
+import { computeRoundResult, computeStreak, isNextDay } from '../src/roundResult.js';
 
 test('第一次玩且得分 > 0 就是新纪录', () => {
   const result = computeRoundResult({ score: 320, previousBest: 0, rounds: 1, hasRated: false });
@@ -76,4 +76,58 @@ test('小数得分会被取整(避免结算卡片出现 319.99999)', () => {
   const result = computeRoundResult({ score: 319.6, previousBest: 100, rounds: 1, hasRated: false });
   assert.equal(result.score, 320);
   assert.equal(result.best, 320);
+});
+
+// ── 连续游玩天数 ────────────────────────────
+
+test('第一次玩: 连续 1 天', () => {
+  const result = computeStreak({ lastDate: undefined, days: undefined, today: '2026-10-12' });
+  assert.deepEqual(result, { lastDate: '2026-10-12', days: 1 });
+});
+
+test('同一天再玩: 天数不变(一天玩十局也只算一天)', () => {
+  const result = computeStreak({ lastDate: '2026-10-12', days: 4, today: '2026-10-12' });
+  assert.deepEqual(result, { lastDate: '2026-10-12', days: 4 });
+});
+
+test('昨天玩过: +1', () => {
+  const result = computeStreak({ lastDate: '2026-10-11', days: 4, today: '2026-10-12' });
+  assert.deepEqual(result, { lastDate: '2026-10-12', days: 5 });
+});
+
+test('断档(隔了一天以上): 重新从 1 开始', () => {
+  const result = computeStreak({ lastDate: '2026-10-09', days: 9, today: '2026-10-12' });
+  assert.deepEqual(result, { lastDate: '2026-10-12', days: 1 });
+});
+
+test('跨月: 1 月 31 日 -> 2 月 1 日 算连续', () => {
+  assert.equal(isNextDay('2026-01-31', '2026-02-01'), true);
+  assert.deepEqual(
+    computeStreak({ lastDate: '2026-01-31', days: 3, today: '2026-02-01' }),
+    { lastDate: '2026-02-01', days: 4 },
+  );
+});
+
+test('跨年: 12 月 31 日 -> 1 月 1 日 算连续', () => {
+  assert.equal(isNextDay('2026-12-31', '2027-01-01'), true);
+});
+
+test('平年 2 月 28 日 -> 3 月 1 日 算连续; 闰年 2 月 29 日 -> 3 月 1 日 也算连续', () => {
+  assert.equal(isNextDay('2026-02-28', '2026-03-01'), true);
+  assert.equal(isNextDay('2028-02-29', '2028-03-01'), true);
+});
+
+test('相隔 1 天但方向相反(今天早于记录) 不算连续, 且不会把天数算成负数', () => {
+  assert.equal(isNextDay('2026-10-13', '2026-10-12'), false);
+  const result = computeStreak({ lastDate: '2026-10-13', days: 5, today: '2026-10-12' });
+  assert.equal(result.days, 1);
+});
+
+test('日期串损坏 / 缺失时不炸, 安全地重算为 1', () => {
+  assert.equal(isNextDay('随便写的', '2026-10-12'), false);
+  assert.equal(isNextDay('2026-13-40', '2026-10-12'), false);
+  assert.equal(isNextDay(null, '2026-10-12'), false);
+  assert.equal(computeStreak({ lastDate: '2026-10-11', days: 5, today: null }).days, 1);
+  assert.equal(computeStreak({ lastDate: 'bad', days: 'x', today: '2026-10-12' }).days, 1);
+  assert.equal(computeStreak({ lastDate: '2026-10-12', days: 'x', today: '2026-10-12' }).days, 1);
 });
