@@ -292,6 +292,68 @@
         </aside>
       </main>
 
+      <section class="panel review-panel" id="reviewPanel" aria-labelledby="reviewTitle">
+        <div class="review-heading">
+          <div>
+            <span class="section-kicker" data-i18n="rv.kicker">评分与评价</span>
+            <h2 id="reviewTitle" data-i18n="rv.title">这一局，你给几分？</h2>
+            <p data-i18n="rv.subtitle">30 秒留下评分，我们据此决定下一步优化什么。你的评价会直接送到开发者邮箱。</p>
+          </div>
+          <div class="review-score-card">
+            <strong id="reviewAverage">—</strong>
+            <span aria-hidden="true">/5</span>
+            <small id="reviewSummaryMeta" data-i18n="rv.noReviews">还没有人评价，来做第一个吧！</small>
+          </div>
+        </div>
+
+        <div class="review-body">
+          <form class="review-form" id="reviewForm" novalidate>
+            <div class="review-form-row">
+              <div class="review-stars-wrap">
+                <span class="review-field-label" data-i18n="rv.ratingLabel">你的评分</span>
+                <div class="review-stars" id="reviewStars" role="radiogroup" aria-label="你的评分" data-i18n-aria="rv.ratingLabel"></div>
+                <span class="review-rating-value" id="reviewRatingValue" aria-live="polite" data-i18n="rv.starHint">点星星打分</span>
+              </div>
+              <label class="review-name-wrap">
+                <span class="sr-only" data-i18n="rv.namePlaceholder">昵称（选填）</span>
+                <input id="reviewName" type="text" maxlength="24" autocomplete="nickname" data-i18n-placeholder="rv.namePlaceholder" placeholder="昵称（选填）" />
+              </label>
+            </div>
+
+            <div class="review-field">
+              <span class="review-field-label" data-i18n="rv.tagsLabel">哪些地方说中了？（可多选）</span>
+              <div class="review-tags" id="reviewTags"></div>
+            </div>
+
+            <div class="review-field">
+              <span class="review-field-label" data-i18n="rv.commentLabel">想多说几句？（选填）</span>
+              <textarea id="reviewComment" rows="3" maxlength="600" data-i18n-placeholder="rv.commentPlaceholder" placeholder="哪里让你惊喜，哪里卡住了…"></textarea>
+            </div>
+
+            <!-- 反垃圾 honeypot: 真人不可见 -->
+            <label class="review-trap" aria-hidden="true">
+              <span>Website</span>
+              <input id="reviewWebsite" type="text" tabindex="-1" autocomplete="off" />
+            </label>
+
+            <div class="review-form-foot">
+              <span class="review-game-hint" id="reviewGameHint">整体体验</span>
+              <span class="char-count" id="reviewCharCount">0/600</span>
+              <button class="primary-btn" type="submit" id="reviewSubmitBtn" data-i18n="rv.submit">提交评价</button>
+            </div>
+            <p class="review-status hidden" id="reviewStatus" aria-live="polite"></p>
+          </form>
+
+          <div class="review-feed">
+            <div class="review-distribution" id="reviewDistribution"></div>
+            <span class="review-feed-label" data-i18n="rv.latest">最新评价</span>
+            <div class="review-list" id="reviewList" aria-live="polite"></div>
+            <p class="review-empty hidden" id="reviewEmpty" data-i18n="rv.noReviews">还没有人评价，来做第一个吧！</p>
+            <p class="review-error hidden" id="reviewError"></p>
+          </div>
+        </div>
+      </section>
+
       <section class="panel message-panel" id="messagePanel" aria-labelledby="messageTitle">
         <div class="message-heading">
           <div>

@@ -173,6 +173,82 @@ app.post('/api/scores', (req, res) => {
   res.status(201).json({ ok: true, score: entry });
 });
 
+// ── 评价体系 ────────────────────────────────
+const REVIEW_FILE = path.join(DATA_DIR, 'reviews.json');
+const MAX_COMMENT_LENGTH = 600;
+const MAX_REVIEWS = 500;
+const REVIEW_TAGS = [
+  'accurate', 'smooth', 'fun', 'addictive', 'easy', 'exhausting',
+  'laggy', 'unclear', 'camera', 'moreGames',
+];
+
+function ensureReviewFile() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(REVIEW_FILE)) {
+    fs.writeFileSync(REVIEW_FILE, JSON.stringify([], null, 2), 'utf8');
+  }
+}
+
+function readReviews() {
+  ensureReviewFile();
+  try {
+    const parsed = JSON.parse(fs.readFileSync(REVIEW_FILE, 'utf8'));
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function summarizeReviews(list) {
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  let sum = 0;
+  list.forEach((review) => {
+    const rating = Math.min(5, Math.max(1, Math.round(review.rating)));
+    distribution[rating] += 1;
+    sum += rating;
+  });
+  const total = list.length;
+  return { total, distribution, average: total ? Math.round((sum / total) * 10) / 10 : 0 };
+}
+
+app.get('/api/reviews', (req, res) => {
+  const limit = Math.max(1, Math.min(100, Number(req.query.limit) || 30));
+  const reviews = readReviews().sort((a, b) => b.createdAt - a.createdAt);
+  res.json({ ok: true, ...summarizeReviews(reviews), reviews: reviews.slice(0, limit) });
+});
+
+app.post('/api/reviews', (req, res) => {
+  const { rating, tags, comment, name, game, lang, website, hp } = req.body || {};
+
+  if (website || hp) {
+    return res.status(400).json({ ok: false, error: 'REJECTED' });
+  }
+  const numericRating = Number(rating);
+  if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+    return res.status(400).json({ ok: false, error: 'INVALID_RATING' });
+  }
+
+  const review = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    rating: numericRating,
+    tags: Array.isArray(tags) ? tags.filter((tag) => REVIEW_TAGS.includes(tag)).slice(0, 6) : [],
+    comment: String(comment || '').replace(/\s+/g, ' ').trim().slice(0, MAX_COMMENT_LENGTH),
+    name: String(name || '').replace(/\s+/g, ' ').trim().slice(0, MAX_NAME_LENGTH),
+    game: GAME_IDS.includes(game) ? game : 'overall',
+    lang: lang === 'zh' ? 'zh' : 'en',
+    createdAt: Date.now(),
+  };
+
+  const all = [...readReviews(), review].slice(-MAX_REVIEWS);
+  ensureReviewFile();
+  fs.writeFileSync(REVIEW_FILE, JSON.stringify(all, null, 2), 'utf8');
+
+  // 本地开发不发送邮件, 线上由 Worker 通过 SMTP 推送
+  res.status(201).json({ ok: true, review, stats: summarizeReviews(all) });
+});
+
 app.listen(PORT, () => {
   console.log(`Message board API running at http://localhost:${PORT}`);
 });

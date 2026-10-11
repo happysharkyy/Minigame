@@ -2,6 +2,7 @@ import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
 import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
 import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from './leaderboard.js';
+import { initReviewBoard, refreshReviewBoard, setReviewGame } from './reviewBoard.js';
 
 const GAME_MODES = {
   TETRIS: 'tetris',
@@ -1538,6 +1539,7 @@ function switchGame(mode) {
   resetCurrentGame();
   drawCurrentGame();
   setActiveGame(mode);
+  setReviewGame(mode);
 }
 
 function resizePoseCanvas() {
@@ -1989,6 +1991,7 @@ function setLanguage(lang) {
   applyGameMeta();
   refreshMessageBoard();
   refreshLeaderboard();
+  refreshReviewBoard();
 
   const state = getCurrentGameState();
 
@@ -2121,6 +2124,8 @@ async function bootstrap() {
   updateLangButton();
   initMessageBoard();
   initLeaderboard();
+  initReviewBoard();
+  setReviewGame(currentGame);
   initCameraDock();
   await preloadSprites();
   applyGameMeta();

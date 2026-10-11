@@ -8,10 +8,25 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
-  "kv_namespaces": [
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "STORE",
+        "class_name": "ArcadeStore"
+      }
+    ]
+  },
+  "migrations": [
     {
-      "binding": "DATA",
-      "id": "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+      "tag": "v1",
+      "new_sqlite_classes": ["ArcadeStore"]
     }
-  ]
+  ],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "MAIL_FROM": "1517762555@qq.com",
+    "MAIL_TO": "1517762555@qq.com"
+  }
 }
