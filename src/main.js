@@ -2,7 +2,7 @@ import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
 import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
 import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from './leaderboard.js';
-import { initReviewBoard, refreshReviewBoard, setReviewGame } from './reviewBoard.js';
+import { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated } from './reviewBoard.js';
 import { initSfx, isEnabled as sfxEnabled, play as playSfx, setEnabled as setSfxEnabled } from './sfx.js';
 
 const GAME_MODES = {
@@ -48,6 +48,8 @@ const GUARD_ROUND_DURATION = 45_000;
 const GAME_ORDER_KEY = 'move-arcade-game-order';
 const GAME_USAGE_KEY = 'move-arcade-game-usage';
 const COMFORT_KEY = 'move-arcade-comfort';
+const BEST_KEY = 'move-arcade-best';
+const TODAY_KEY = 'move-arcade-today';
 
 
 
@@ -417,6 +419,13 @@ const restartBtn = document.querySelector('#restartBtn');
 const mainStartBtn = document.querySelector('#mainStartBtn');
 const pauseBtn = document.querySelector('#pauseBtn');
 const overlayStartBtn = document.querySelector('#startActionBtn');
+const overlayResult = document.querySelector('#overlayResult');
+const resultScore = document.querySelector('#resultScore');
+const resultBest = document.querySelector('#resultBest');
+const resultRecord = document.querySelector('#resultRecord');
+const resultGap = document.querySelector('#resultGap');
+const resultToday = document.querySelector('#resultToday');
+const resultReviewBtn = document.querySelector('#resultReviewBtn');
 const helpBtn = document.querySelector('#helpBtn');
 const helpDialog = document.querySelector('#helpDialog');
 const closeHelpBtn = document.querySelector('#closeHelpBtn');
@@ -692,9 +701,9 @@ function spawnPiece() {
   if (collides(tetrisState.active.matrix, tetrisState.active.x, tetrisState.active.y)) {
     tetrisState.running = false;
     tetrisState.gameOver = true;
-    updateGameOverlay(true, t('overlay.gameOver'), t('overlay.restartHintFruit'));
+    updateGameOverlay(true, t('overlay.gameOver'), t('overlay.retryHint'));
     gameStateBadge.textContent = t('game.state.over');
-    playSfx('gameover');
+    showRoundResult(currentGame, tetrisState.score);
     submitScore(currentGame, tetrisState.score);
   }
 }
@@ -926,9 +935,9 @@ function endFruitGame(title, hint) {
   fruitState.gameOver = true;
   fruitState.combo = 0;
   updateHud();
-  updateGameOverlay(true, title, `${hint} ${t('overlay.restartBackHint')}`);
+  updateGameOverlay(true, title, `${hint} ${t('overlay.retryHint')}`);
   gameStateBadge.textContent = t('game.state.over');
-  playSfx('gameover');
+  showRoundResult(currentGame, fruitState.score);
   submitScore(currentGame, fruitState.score);
 }
 
@@ -1632,7 +1641,88 @@ function updateGameOverlay(show, title = overlayTitle.textContent, hint = overla
   overlay.classList.toggle('hidden', !show);
   overlayTitle.textContent = title;
   overlayHint.textContent = hint;
+  // 结算卡片只属于"这一局刚结束"这一刻, 任何其它遮罩状态都不该看到它
+  hideRoundResult();
   syncOverlayButton();
+}
+
+// ── 局末结算: 本局得分 / 个人最佳 / 差多少破纪录 / 今日第几局 ──
+// 这些都在本地算, 不依赖后端 —— 破纪录的庆祝必须即时, 后端挂了也要有
+function todayStamp() {
+  const date = new Date();
+  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+}
+
+function bumpTodayRounds() {
+  const saved = readStoredJson(TODAY_KEY, null);
+  const stamp = todayStamp();
+  const count = saved && saved.date === stamp ? (Number(saved.count) || 0) + 1 : 1;
+  writeStoredJson(TODAY_KEY, { date: stamp, count });
+  return count;
+}
+
+function getPersonalBest(game) {
+  const all = readStoredJson(BEST_KEY, {});
+  return Number(all?.[game]) || 0;
+}
+
+function setPersonalBest(game, score) {
+  const all = readStoredJson(BEST_KEY, {}) || {};
+  all[game] = score;
+  writeStoredJson(BEST_KEY, all);
+}
+
+function hideRoundResult() {
+  overlayResult?.classList.add('hidden');
+}
+
+// 结算数据算一次就缓存下来: 切语言时只需重新渲染文案, 不能重算
+// (重算会把"新纪录"判定成 False —— 因为个人最佳在第一次结算时已经被刷新了)
+let lastRoundResult = null;
+
+function renderRoundResult() {
+  if (!overlayResult || !lastRoundResult) return;
+  const { score, best, isRecord, gap, rounds } = lastRoundResult;
+
+  resultScore.textContent = String(score);
+  resultBest.textContent = tf('result.best', { n: best });
+  resultRecord.classList.toggle('hidden', !isRecord);
+
+  // "差一点就破纪录"是最省力的再来一局理由, 只在确实落后时显示
+  if (!isRecord && score > 0 && gap > 0) {
+    resultGap.textContent = tf('result.gap', { n: gap });
+    resultGap.classList.remove('hidden');
+  } else {
+    resultGap.classList.add('hidden');
+  }
+
+  resultToday.textContent = tf('result.today', { n: rounds });
+
+  // 评价引导放在情绪最高的结算时刻, 但要玩够 2 局且没评过才露出, 否则很打扰
+  resultReviewBtn.classList.toggle('hidden', hasRated() || rounds < 2);
+
+  overlayResult.classList.remove('hidden');
+}
+
+function showRoundResult(game, score) {
+  if (!overlayResult) return;
+
+  const previousBest = getPersonalBest(game);
+  const isRecord = score > previousBest && score > 0;
+  if (isRecord) setPersonalBest(game, score);
+  const best = Math.max(previousBest, score);
+
+  lastRoundResult = {
+    game,
+    score,
+    best,
+    isRecord,
+    gap: best - score,
+    rounds: bumpTodayRounds(),
+  };
+
+  renderRoundResult();
+  playSfx(isRecord ? 'record' : 'gameover');
 }
 
 // 结算/暂停/进行中, 按钮文案与可用状态都跟着走, 让"下一步该点哪"永远只有一个答案
@@ -1781,6 +1871,7 @@ function resetCurrentGame() {
   // 先恢复时钟, 否则暂停中重置会让新一局一直卡在停表状态
   if (paused) setPaused(false);
   startPoseSince = 0;
+  lastRoundResult = null;
   if (currentGame === GAME_MODES.TETRIS) {
     resetTetrisGame();
   } else {
@@ -2323,7 +2414,7 @@ function setLanguage(lang) {
       }
     } else if (state.gameOver) {
       if (currentGame === GAME_MODES.TETRIS) {
-        updateGameOverlay(true, t('overlay.gameOver'), t('overlay.restartHintFruit'));
+        updateGameOverlay(true, t('overlay.gameOver'), t('overlay.retryHint'));
       } else {
         updateGameOverlay(
           true,
@@ -2332,9 +2423,11 @@ function setLanguage(lang) {
             score: fruitState.score,
             sliced: fruitState.sliced,
             combo: fruitState.bestCombo,
-          })} ${t('overlay.restartBackHint')}`,
+          })} ${t('overlay.retryHint')}`,
         );
       }
+      // 结算卡片换语言后要重新渲染文案(数据用缓存的, 不重算, 否则"新纪录"标记会丢)
+      renderRoundResult();
     } else {
       const meta = getCurrentMeta();
       updateGameOverlay(true, meta.startTitle, meta.startHint);
@@ -2398,6 +2491,15 @@ function setupEvents() {
   });
   reducedMotionToggle?.addEventListener('change', () => {
     setReducedMotion(reducedMotionToggle.checked);
+  });
+
+  // 结算卡片里的"给个评分"直接把人送到评价面板, 别让用户自己找
+  resultReviewBtn?.addEventListener('click', () => {
+    const panel = document.querySelector('#reviewPanel');
+    if (!panel) return;
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const firstStar = panel.querySelector('.star-btn');
+    setTimeout(() => firstStar?.focus({ preventScroll: true }), 400);
   });
   // 点遮罩空白处也关闭
   helpDialog?.addEventListener('click', (event) => {

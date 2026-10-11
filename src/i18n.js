@@ -81,6 +81,7 @@ const I18N = {
     'overlay.restartBackHint': '双手高举重新开始，或者切换回俄罗斯方块。',
     'overlay.startAction': '不用手势，直接开始',
     'overlay.replay': '再来一局',
+    'overlay.retryHint': '双手高举，立刻再来一局。',
     'overlay.paused': '已暂停',
     'overlay.pausedHint': '动作识别和计时都已冻结，点“继续”接着玩。',
     'overlay.toastWait': '等待动作',
@@ -90,6 +91,14 @@ const I18N = {
     'overlay.modelLoadingHint': '首次加载需下载模型文件，请耐心等待。',
     'overlay.reloadHint': '请刷新页面重试；若仍失败，请检查浏览器控制台错误信息。',
     'overlay.errorDetail': '错误：{msg}',
+
+    // 局末结算
+    'result.score': '本局得分',
+    'result.best': '个人最佳 {n}',
+    'result.newRecord': '🏆 新纪录！',
+    'result.gap': '差 {n} 分破纪录',
+    'result.today': '今日第 {n} 局',
+    'result.reviewNudge': '玩得怎么样？给个评分 →',
 
     // 统计
     'stats.score': '分数',
@@ -421,6 +430,7 @@ const I18N = {
     'overlay.restartBackHint': 'Raise both hands to restart, or switch back to Block Drop.',
     'overlay.startAction': 'Start without gestures',
     'overlay.replay': 'Play again',
+    'overlay.retryHint': 'Raise both hands to jump straight back in.',
     'overlay.paused': 'Paused',
     'overlay.pausedHint': 'Tracking and the timer are frozen. Tap Resume to continue.',
     'overlay.toastWait': 'Waiting for your move',
@@ -430,6 +440,14 @@ const I18N = {
     'overlay.modelLoadingHint': 'The first load downloads the model files — please wait.',
     'overlay.reloadHint': 'Refresh the page and try again. If it still fails, check the browser console.',
     'overlay.errorDetail': 'Error: {msg}',
+
+    // Round result
+    'result.score': 'This round',
+    'result.best': 'Best {n}',
+    'result.newRecord': '🏆 New record!',
+    'result.gap': '{n} short of your best',
+    'result.today': 'Round {n} today',
+    'result.reviewNudge': 'How was it? Leave a rating →',
 
     // Stats
     'stats.score': 'Score',

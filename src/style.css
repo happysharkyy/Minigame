@@ -355,6 +355,75 @@ button:active { transform: translateY(1px); }
 .game-overlay p { max-width: 285px; margin-top: 8px; color: var(--muted); font-size: .78rem; line-height: 1.6; white-space: pre-line; }
 .overlay-btn { margin-top: 17px; animation: overlay-pulse 2.6s ease-in-out infinite; }
 
+/* ── 局末结算卡片 ─────────────────────────── */
+.overlay-result {
+  display: grid;
+  gap: 9px;
+  width: min(100%, 300px);
+  margin-top: 15px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, .045);
+  animation: result-in 260ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.overlay-result.hidden { display: none; }
+
+@keyframes result-in {
+  from { opacity: 0; transform: translateY(10px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.result-score-row { display: flex; align-items: baseline; justify-content: center; gap: 9px; flex-wrap: wrap; }
+.result-label { color: var(--muted); font-size: .68rem; }
+.result-score { font-size: 2rem; line-height: 1; letter-spacing: -.045em; color: var(--text); }
+
+.result-record {
+  padding: 3px 9px;
+  border-radius: 999px;
+  color: #241503;
+  background: linear-gradient(120deg, #ffd79a, var(--orange));
+  font-size: .62rem;
+  font-weight: 800;
+  animation: record-pop 900ms ease-in-out infinite;
+}
+
+@keyframes record-pop {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 184, 108, .34); }
+  50% { transform: scale(1.05); box-shadow: 0 0 0 8px rgba(255, 184, 108, 0); }
+}
+
+.result-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: .66rem;
+}
+
+.result-best { color: #cfd8ea; }
+.result-gap { color: var(--orange); }
+.result-today::before { content: '·'; margin-right: 8px; }
+.result-gap.hidden, .result-today.hidden { display: none; }
+
+.result-review {
+  justify-self: center;
+  margin-top: 2px;
+  padding: 7px 13px;
+  border: 1px dashed rgba(139, 245, 220, .3);
+  border-radius: 999px;
+  background: rgba(139, 245, 220, .07);
+  color: var(--mint);
+  font-size: .68rem;
+  cursor: pointer;
+  transition: background 150ms ease, transform 150ms ease;
+}
+
+.result-review:hover { background: rgba(139, 245, 220, .14); transform: translateY(-1px); }
+
 @keyframes overlay-pulse {
   0%, 100% { box-shadow: 0 7px 22px rgba(69, 215, 184, .18); }
   50% { box-shadow: 0 7px 30px rgba(69, 215, 184, .4); }

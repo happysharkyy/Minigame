@@ -383,4 +383,13 @@ function setReviewGame(gameId) {
     : t(`lib.${currentGame}.title`);
 }
 
-export { initReviewBoard, refreshReviewBoard, setReviewGame, RATED_KEY };
+// 是否已经评过(用于决定要不要在局末结算里继续劝评)
+function hasRated() {
+  try {
+    return Boolean(localStorage.getItem(RATED_KEY));
+  } catch (err) {
+    return false;
+  }
+}
+
+export { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated, RATED_KEY };

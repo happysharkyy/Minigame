@@ -176,6 +176,19 @@
                 <div class="overlay-icon" id="overlayIcon">↟</div>
                 <h3 id="overlayTitle">双手高举，准备开始</h3>
                 <p id="overlayHint">保持上半身和双手完整入镜，动作保持片刻即可开始。</p>
+                <div class="overlay-result hidden" id="overlayResult" aria-live="polite">
+                  <div class="result-score-row">
+                    <span class="result-label" data-i18n="result.score">本局得分</span>
+                    <strong class="result-score" id="resultScore">0</strong>
+                    <span class="result-record hidden" id="resultRecord" data-i18n="result.newRecord">🏆 新纪录！</span>
+                  </div>
+                  <div class="result-meta">
+                    <span class="result-best" id="resultBest">个人最佳 0</span>
+                    <span class="result-gap" id="resultGap"></span>
+                    <span class="result-today" id="resultToday"></span>
+                  </div>
+                  <button class="result-review hidden" id="resultReviewBtn" type="button" data-i18n="result.reviewNudge">玩得怎么样？给个评分 →</button>
+                </div>
                 <button class="primary-btn overlay-btn" id="startActionBtn" type="button" data-i18n="overlay.startAction">不用手势，直接开始</button>
               </div>
               <div class="action-toast" id="actionToast" aria-live="polite" data-i18n="overlay.toastWait">等待动作</div>
