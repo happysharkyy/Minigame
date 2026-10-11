@@ -21,7 +21,7 @@ const I18N = {
     // 游戏库
     'lib.heading': '今天想怎么玩？',
     'lib.playableCount': '2 款可玩',
-    'lib.intro': '拖动游戏卡片调整顺序，或让系统根据你的最近体验自动推荐。',
+    'lib.intro': '选一款开始玩，游戏之间随时切换；开发中的玩法会标注出来，不会让你点进空壳。',
     'lib.sortLabel': '游戏排序方式',
     'lib.sort.custom': '我的顺序',
     'lib.sort.smart': '智能推荐',
@@ -158,7 +158,7 @@ const I18N = {
     'controls.pause': '暂停',
     'controls.resume': '继续',
     'controls.restart': '重新开始',
-    'controls.keyboardTip': '键盘备用：Enter 开始 · P 暂停 · 1–4 切换游戏',
+    'controls.keyboardTip': '键盘备用：Enter 开始 · P 暂停 · R 重开 · 1–2 切换游戏',
 
     // 体感镜头面板
     'cameraPanel.title': '体感镜头',
@@ -282,7 +282,7 @@ const I18N = {
     'msg.count': '{count} 条留言',
     'msg.empty': '还没有留言，来抢沙发吧！',
     'msg.loading': '正在加载留言…',
-    'msg.loadError': '留言板暂时无法连接，请确认后端服务已启动（npm run server）。',
+    'msg.loadError': '留言板暂时无法连接，请稍后再试。',
     'msg.sendError': '发送失败，请稍后再试。',
     'msg.success': '留言发布成功！',
     'msg.nameRequired': '请输入昵称',
@@ -299,7 +299,7 @@ const I18N = {
     'lb.title': '分数排行榜',
     'lb.subtitle': '看看谁是这一轮的体感之王',
     'lb.empty': '还没有成绩，快来创造第一分吧！',
-    'lb.loadError': '排行榜暂时无法连接，请确认后端服务已启动（npm run server）。',
+    'lb.loadError': '排行榜暂时无法连接，请稍后再试。',
     'lb.you': '你',
     'lb.defaultName': '体感玩家',
     'lb.newRecord': '新纪录',
@@ -498,7 +498,7 @@ const I18N = {
     'controls.pause': 'Pause',
     'controls.resume': 'Resume',
     'controls.restart': 'Restart',
-    'controls.keyboardTip': 'Keyboard: Enter start · P pause · 1–4 switch games',
+    'controls.keyboardTip': 'Keyboard: Enter start · P pause · R restart · 1–2 switch games',
 
     // Camera panel
     'cameraPanel.title': 'Motion Camera',
@@ -622,7 +622,7 @@ const I18N = {
     'msg.count': '{count} messages',
     'msg.empty': 'No messages yet. Be the first to leave one!',
     'msg.loading': 'Loading messages…',
-    'msg.loadError': 'Message board is temporarily unavailable. Make sure the backend is running (npm run server).',
+    'msg.loadError': 'Message board is temporarily unavailable. Please try again later.',
     'msg.sendError': 'Failed to send. Please try again later.',
     'msg.success': 'Message posted!',
     'msg.nameRequired': 'Please enter your name',
@@ -639,7 +639,7 @@ const I18N = {
     'lb.title': 'Score Leaderboard',
     'lb.subtitle': 'See who rules the arena',
     'lb.empty': 'No scores yet. Be the first to set one!',
-    'lb.loadError': 'Leaderboard is temporarily unavailable. Make sure the backend is running (npm run server).',
+    'lb.loadError': 'Leaderboard is temporarily unavailable. Please try again later.',
     'lb.you': 'You',
     'lb.defaultName': 'Player',
     'lb.newRecord': 'New record',
