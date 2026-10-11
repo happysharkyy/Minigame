@@ -59,6 +59,12 @@ const presetName = args.find((a) => !a.startsWith('--')) || 'mobile';
 const isFull = args.includes('--full');
 const evalIndex = args.indexOf('--eval');
 const customEval = evalIndex !== -1 ? args[evalIndex + 1] : null;
+// --eval-file probe.js: 从文件读脚本。多步交互的探针用命令行传给 shell 很容易被换行/引号搞坏
+const evalFileIndex = args.indexOf('--eval-file');
+const customEvalFile = evalFileIndex !== -1
+  ? fs.readFileSync(path.resolve(root, args[evalFileIndex + 1]), 'utf8')
+  : null;
+const customScript = customEvalFile || customEval;
 // --scroll "#faqPanel": 截图前先滚到某个位置, 用来检查页面下半部分
 const scrollIndex = args.indexOf('--scroll');
 const scrollTo = scrollIndex !== -1 ? args[scrollIndex + 1] : null;
@@ -103,10 +109,18 @@ const server = http.createServer((req, res) => {
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     if (p.startsWith('/api/')) {
       // 后端不存在时给前端合法的示例数据 —— 空数据会让评价/排行榜区域整块隐藏,
-      // 那样截图就看不到这些区块的真实排版
+      // 那样截图就看不到这些区块的真实排版。
+      // POST 要返回 POST 的形状(带 review/stats), 否则探测不出"提交后"的真实表现。
       const now = Date.now();
-      const body = p.includes('/reviews')
-        ? JSON.stringify({
+      let body;
+      if (p.includes('/reviews') && req.method === 'POST') {
+        body = JSON.stringify({
+          ok: true,
+          review: { id: 'new', rating: 4, tags: ['fun'], comment: 'probe', name: 'Probe', game: 'tetris', lang: 'zh', createdAt: now },
+          stats: { total: 8, average: 4.3, distribution: { 1: 0, 2: 1, 3: 1, 4: 3, 5: 3 }, byGame: { tetris: { count: 3, average: 3.7 }, fruit: { count: 3, average: 4.7 } } },
+        });
+      } else if (p.includes('/reviews')) {
+        body = JSON.stringify({
           ok: true,
           total: 7,
           average: 4.3,
@@ -117,12 +131,14 @@ const server = http.createServer((req, res) => {
             { id: 'b', rating: 3, tags: ['laggy'], comment: '老笔记本上偶尔掉帧', name: 'Anonymous', game: 'tetris', lang: 'zh', createdAt: now - 3600000 },
             { id: 'c', rating: 4, tags: ['fun', 'easy'], comment: '', name: 'Mia', game: 'overall', lang: 'en', createdAt: now - 7200000 },
           ],
-        })
-        : p.includes('/messages')
-          ? '{"ok":true,"count":2,"messages":[{"id":"m1","name":"Aki","content":"希望能加双人模式","lang":"zh","createdAt":' + now + '},{"id":"m2","name":"Ben","content":"Star Relay looks fun!","lang":"en","createdAt":' + now + '}]}'
-          : p.includes('/scores')
-            ? '{"ok":true,"games":{"tetris":[{"id":"s1","name":"Aki","score":2400,"lang":"zh","createdAt":' + now + '},{"id":"s2","name":"Ben","score":1800,"lang":"en","createdAt":' + now + '}],"fruit":[{"id":"s3","name":"Mia","score":640,"lang":"en","createdAt":' + now + '}]}}'
-            : '{"ok":true}';
+        });
+      } else if (p.includes('/messages')) {
+        body = '{"ok":true,"count":2,"messages":[{"id":"m1","name":"Aki","content":"希望能加双人模式","lang":"zh","createdAt":' + now + '},{"id":"m2","name":"Ben","content":"Star Relay looks fun!","lang":"en","createdAt":' + now + '}]}';
+      } else if (p.includes('/scores')) {
+        body = '{"ok":true,"games":{"tetris":[{"id":"s1","name":"Aki","score":2400,"lang":"zh","createdAt":' + now + '},{"id":"s2","name":"Ben","score":1800,"lang":"en","createdAt":' + now + '}],"fruit":[{"id":"s3","name":"Mia","score":640,"lang":"en","createdAt":' + now + '}]}}';
+      } else {
+        body = '{"ok":true}';
+      }
       return res.writeHead(200, { 'Content-Type': 'application/json' }).end(body);
     }
     file = path.join(dist, 'index.html');
@@ -228,9 +244,16 @@ if (openSelector) {
 }
 
 let extra = null;
-if (customEval) {
-  const r = await send('Runtime.evaluate', { expression: customEval, returnByValue: true }, sessionId);
+let evalError = null;
+if (customScript) {
+  // awaitPromise: 允许 --eval 里写 async IIFE, 驱动多步交互后返回结果
+  const r = await send('Runtime.evaluate', {
+    expression: customScript,
+    returnByValue: true,
+    awaitPromise: true,
+  }, sessionId);
   extra = r.result?.value ?? r.result?.description ?? r.exceptionDetails?.text;
+  if (r.exceptionDetails) evalError = r.exceptionDetails.exception?.description || r.exceptionDetails.text || 'eval 抛异常';
 }
 
 if (clickSelector) {
@@ -349,6 +372,13 @@ console.log('布局:', JSON.stringify(metrics, null, 1));
 if (extra !== null && extra !== undefined) console.log('--eval 结果:', JSON.stringify(extra));
 console.log(`横向溢出元素 (${overflowing.length}):`, overflowing.length ? JSON.stringify(overflowing, null, 1) : '无');
 console.log(`截图 -> ${path.relative(root, outFile)} (${(fs.statSync(outFile).size / 1024).toFixed(1)} KB)`);
+
+// --strict-eval: --eval / --eval-file 里抛出的异常视为失败(交叉状态断言靠这个进 verify)
+if (evalError && args.includes('--strict-eval')) {
+  console.error('✗ 探针断言失败:');
+  evalError.split('\n').forEach((line) => console.error(`    ${line}`));
+  process.exit(1);
+}
 
 // ── 可回归的布局断言 ────────────────────────
 // 这几条都是实际踩过的坑: 横向溢出、移动端棋牌被挤出首屏、摄像头浮层盖住正文。
