@@ -4,6 +4,7 @@ import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
 import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from './leaderboard.js';
 import { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated, scrollToReviewForm } from './reviewBoard.js';
 import { computeRoundResult, computeStreak } from './roundResult.js';
+import { updateFaqSchema } from './structuredData.js';
 import { initSfx, isEnabled as sfxEnabled, play as playSfx, setEnabled as setSfxEnabled } from './sfx.js';
 
 const GAME_MODES = {
@@ -2397,6 +2398,8 @@ function setLanguage(lang) {
   refreshMessageBoard();
   refreshLeaderboard();
   refreshReviewBoard();
+  // 放在最后: 结构化数据要用切换后的语言重建, 必须晚于静态文案的替换
+  updateFaqSchema();
 
   const state = getCurrentGameState();
 
@@ -2610,6 +2613,7 @@ function gameLoop(timestamp) {
 
 async function bootstrap() {
   initLanguage();
+  updateFaqSchema();
   updateLangButton();
   markHelpHint();
   initSfx();

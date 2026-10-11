@@ -194,7 +194,8 @@ const CHECKS = [
     name: 'FAQ 正文与 FAQPage 结构化数据一致(JSON 合法且条目数相同)',
     test: (dom) => {
       const visible = (dom.match(/class="faq-item"/g) || []).length;
-      const blocks = [...dom.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+      // [^>]* 是必要的: FAQ 那块script 现在还带 id, 写死 "…json"> 会漏掉它
+      const blocks = [...dom.matchAll(/<script type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/g)]
         .map((m) => m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
       let faqQuestions = 0;
       for (const raw of blocks) {
@@ -236,6 +237,31 @@ const CHECKS = [
     name: '有成绩数据时: 排行榜列表真的渲染出条目',
     test: (dom) => /class="lb-row|class="lb-item|lb-medal/.test(dom) || dom.includes('2400'),
     detail: '排行榜有数据但没有渲染出条目',
+  },
+  {
+    name: 'FAQPage 的标注语言与页面显示语言一致',
+    test: (dom) => {
+      const htmlLang = /<html[^>]*\blang="([^"]+)"/.exec(dom);
+      const block = /<script type="application\/ld\+json" id="faqSchema">([\s\S]*?)<\/script>/.exec(dom);
+      if (!htmlLang || !block) return false;
+      const raw = block[1]
+        .replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+      let data;
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        return false;
+      }
+      const declared = String(data.inLanguage || '');
+      // 页面中文 -> 标注必须是中文; 页面英文 -> 标注必须是英文。
+      // 对不上就说明"标注里写的内容"和"用户在页面上看到的"不是同一份
+      return htmlLang[1].startsWith('zh') ? declared.startsWith('zh') : declared.startsWith('en');
+    },
+    detail: '页面语言与 FAQPage 的 inLanguage 对不上(标注内容和页面显示的语言不一致)',
+    debug: (dom) => ({
+      htmlLang: (/<html[^>]*\blang="([^"]+)"/.exec(dom) || [])[1],
+      schemaLang: (/"inLanguage":\s*"([^"]+)"/.exec(dom) || [])[1],
+    }),
   },
 ];
 

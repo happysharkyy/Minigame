@@ -22,6 +22,7 @@
     <meta property="og:image" content="https://motionsensinggame.top/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="MOVE ARCADE 体感游戏中心：用摄像头和身体动作玩俄罗斯方块与切西瓜" />
     <meta property="og:locale" content="zh_CN" />
     <meta property="og:locale:alternate" content="en_US" />
 
@@ -30,6 +31,7 @@
     <meta name="twitter:title" content="MOVE ARCADE · 体感游戏中心" />
     <meta name="twitter:description" content="无需手柄，用摄像头和身体动作游玩体感俄罗斯方块与体感切西瓜，更多玩法开发中。支持 PC 与移动端，中英双语，打开即玩。" />
     <meta name="twitter:image" content="https://motionsensinggame.top/og-image.png" />
+    <meta name="twitter:image:alt" content="MOVE ARCADE 体感游戏中心：用摄像头和身体动作玩俄罗斯方块与切西瓜" />
 
     <!-- 图标 -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -61,8 +63,11 @@
     }
     </script>
     <!-- FAQPage 结构化数据: 与页面上"常见问题"一节可见的文字一一对应。
-         Google 要求标注内容必须真的出现在页面上, 所以两边必须同步改。 -->
-    <script type="application/ld+json">
+         Google 要求标注内容必须真的出现在页面上, 所以两边必须同步改。
+         这里的静态内容是中文(与静态 HTML 一致, 给不执行 JS 的爬虫用);
+         页面切到英文时, src/structuredData.js 会用同一套 i18n 文案覆盖它,
+         保证"标注语言"和"页面显示语言"始终一致。 -->
+    <script type="application/ld+json" id="faqSchema">
     {
       "@context": "https://schema.org",
       "@type": "FAQPage",
