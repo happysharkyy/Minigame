@@ -140,6 +140,20 @@ const CHECKS = [
     test: (dom) => /id="gameCatalog"[^>]*data-sort-mode="/.test(dom.replace(/\s+/g, ' ')),
     detail: 'gameCatalog 上没有 data-sort-mode, 说明排序状态没接上',
   },
+  {
+    name: '页面只有一个 h1 且是站名(SEO/读屏软件的页面标题)',
+    test: (dom) => {
+      const h1s = dom.match(/<h1[^>]*>[\s\S]*?<\/h1>/g) || [];
+      return h1s.length === 1 && /MOVE ARCADE/.test(h1s[0]);
+    },
+    detail: 'h1 不是唯一、或 h1 里不是站名(可能又变回"今天想怎么玩？"这类界面问句)',
+  },
+  {
+    name: '局末结算卡片的元素都在(结算时由 JS 填充)',
+    test: (dom) => ['resultScore', 'resultBest', 'resultRecord', 'resultGap', 'resultToday', 'resultReviewBtn']
+      .every((id) => dom.includes(`id="${id}"`)),
+    detail: '结算卡片缺少元素, 局末会看不到分数/个人最佳/差距',
+  },
 ];
 
 const browser = findBrowser();

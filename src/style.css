@@ -128,8 +128,9 @@ h1, h2, h3, p { margin: 0; }
   box-shadow: 0 0 24px rgba(139, 245, 220, .26), inset 0 0 0 1px rgba(255, 255, 255, .18);
 }
 
-.brand strong, .brand small { display: block; }
-.brand strong { font-size: .93rem; letter-spacing: .14em; }
+.brand-name, .brand small { display: block; }
+/* 站名是页面的 h1: 之前 h1 落在游戏库那句"今天想怎么玩？"上, 对搜索引擎和读屏软件都是错的标题 */
+.brand-name { font-size: .93rem; letter-spacing: .14em; font-weight: 800; }
 .brand small { color: var(--muted); font-size: .7rem; margin-top: 3px; }
 
 .session-status {
@@ -218,7 +219,7 @@ button:active { transform: translateY(1px); }
   letter-spacing: .2em;
 }
 
-.section-heading h1 { font-size: 1.22rem; letter-spacing: -.035em; }
+.section-heading h2 { font-size: 1.22rem; letter-spacing: -.035em; }
 .compact-heading h2 { font-size: 1rem; }
 .count-pill, .soft-chip, .difficulty-chip {
   padding: 5px 8px;
