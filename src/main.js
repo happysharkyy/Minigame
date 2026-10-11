@@ -3,6 +3,7 @@ import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
 import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
 import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from './leaderboard.js';
 import { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated } from './reviewBoard.js';
+import { computeRoundResult } from './roundResult.js';
 import { initSfx, isEnabled as sfxEnabled, play as playSfx, setEnabled as setSfxEnabled } from './sfx.js';
 
 const GAME_MODES = {
@@ -1682,14 +1683,14 @@ let lastRoundResult = null;
 
 function renderRoundResult() {
   if (!overlayResult || !lastRoundResult) return;
-  const { score, best, isRecord, gap, rounds } = lastRoundResult;
+  const { score, best, isRecord, gap, rounds, showReview } = lastRoundResult;
 
   resultScore.textContent = String(score);
   resultBest.textContent = tf('result.best', { n: best });
   resultRecord.classList.toggle('hidden', !isRecord);
 
   // "差一点就破纪录"是最省力的再来一局理由, 只在确实落后时显示
-  if (!isRecord && score > 0 && gap > 0) {
+  if (gap > 0) {
     resultGap.textContent = tf('result.gap', { n: gap });
     resultGap.classList.remove('hidden');
   } else {
@@ -1697,9 +1698,7 @@ function renderRoundResult() {
   }
 
   resultToday.textContent = tf('result.today', { n: rounds });
-
-  // 评价引导放在情绪最高的结算时刻, 但要玩够 2 局且没评过才露出, 否则很打扰
-  resultReviewBtn.classList.toggle('hidden', hasRated() || rounds < 2);
+  resultReviewBtn.classList.toggle('hidden', !showReview);
 
   overlayResult.classList.remove('hidden');
 }
@@ -1707,22 +1706,18 @@ function renderRoundResult() {
 function showRoundResult(game, score) {
   if (!overlayResult) return;
 
-  const previousBest = getPersonalBest(game);
-  const isRecord = score > previousBest && score > 0;
-  if (isRecord) setPersonalBest(game, score);
-  const best = Math.max(previousBest, score);
-
-  lastRoundResult = {
-    game,
+  const result = computeRoundResult({
     score,
-    best,
-    isRecord,
-    gap: best - score,
+    previousBest: getPersonalBest(game),
     rounds: bumpTodayRounds(),
-  };
+    hasRated: hasRated(),
+  });
 
+  if (result.isRecord) setPersonalBest(game, result.score);
+
+  lastRoundResult = result;
   renderRoundResult();
-  playSfx(isRecord ? 'record' : 'gameover');
+  playSfx(result.isRecord ? 'record' : 'gameover');
 }
 
 // 结算/暂停/进行中, 按钮文案与可用状态都跟着走, 让"下一步该点哪"永远只有一个答案
