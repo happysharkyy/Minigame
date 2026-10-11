@@ -166,6 +166,33 @@ const CHECKS = [
     test: (_dom, log) => !/Uncaught|ERROR:CONSOLE|SyntaxError|TypeError/i.test(log),
     detail: '控制台出现未捕获异常, 见下方日志',
   },
+  {
+    // 结构化数据写错不会报错, 只会静默失效; Google 还要求标注内容必须真的在页面上,
+    // 所以这里同时校验"JSON 合法"和"问题数 == 页面上可见的条目数"
+    name: 'FAQ 正文与 FAQPage 结构化数据一致(JSON 合法且条目数相同)',
+    test: (dom) => {
+      const visible = (dom.match(/class="faq-item"/g) || []).length;
+      const blocks = [...dom.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)]
+        .map((m) => m[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>'));
+      let faqQuestions = 0;
+      for (const raw of blocks) {
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          return false;
+        }
+        if (data['@type'] === 'FAQPage') faqQuestions = (data.mainEntity || []).length;
+      }
+      return visible === 5 && faqQuestions === 5 && blocks.length >= 3;
+    },
+    detail: 'JSON-LD 不是合法 JSON, 或 FAQ 可见条目数与 FAQPage 问题数不一致(结构化数据会失效)',
+  },
+  {
+    name: '摄像头隐私说明真的出现在页面上(信任问题)',
+    test: (dom) => dom.includes('视频画面不离开你的设备') || dom.includes('The video never leaves your device'),
+    detail: '页面上找不到"画面不会被上传"的说明 —— 这是摄像头类产品最该正面回答的问题',
+  },
 ];
 
 const browser = findBrowser();

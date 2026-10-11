@@ -1027,6 +1027,50 @@ button:active { transform: translateY(1px); }
 
 .review-error { border-color: rgba(255, 123, 139, .25); color: var(--danger); }
 
+/* ── 常见问题 ───────────────────────────── */
+.faq-panel {
+  margin-top: 16px;
+  padding: 22px 20px 24px;
+}
+
+.faq-heading h2 { margin-top: 6px; font-size: 1.3rem; letter-spacing: -.035em; }
+.faq-list { display: grid; gap: 8px; margin-top: 16px; }
+
+.faq-item {
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .024);
+  overflow: hidden;
+}
+
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 13px 15px;
+  color: #dbe3f0;
+  font-size: .82rem;
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+/* 去掉浏览器默认的小三角, 换成可旋转的 + / × */
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::after {
+  content: '+';
+  margin-left: auto;
+  color: var(--mint);
+  font-size: 1.05rem;
+  font-weight: 400;
+  line-height: 1;
+  transition: transform 180ms ease;
+}
+.faq-item[open] summary::after { transform: rotate(45deg); }
+.faq-item summary:hover { color: #fff; }
+.faq-item summary:focus-visible { outline: 2px solid var(--mint); outline-offset: -2px; }
+.faq-item p { padding: 0 15px 14px; color: var(--muted); font-size: .78rem; line-height: 1.7; }
+
 /* ── 页脚 ─────────────────────────────── */
 .site-footer {
   margin-top: 18px;
@@ -1174,6 +1218,9 @@ button:active { transform: translateY(1px); }
 
 @media (max-width: 480px) {
   .review-panel { padding: 18px 14px 20px; }
+  .faq-panel { padding: 18px 14px 20px; }
+  .faq-item summary { padding: 12px 13px; font-size: .8rem; }
+  .faq-item p { padding: 0 13px 13px; }
   .review-score-card { padding: 8px 12px; }
   .review-score-card strong { font-size: 1.55rem; }
   .review-form-row { grid-template-columns: 1fr; }

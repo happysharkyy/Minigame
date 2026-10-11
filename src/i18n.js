@@ -349,6 +349,20 @@ const I18N = {
     'rv.gameOverall': '整体体验',
     'rv.distAria': '{n} 星共 {count} 条',
 
+    // 常见问题(同时是页面正文, 与 FAQPage 结构化数据一一对应)
+    'faq.kicker': '常见问题',
+    'faq.title': '关于体感游戏，你可能想先知道',
+    'faq.q1': '需要买手柄或安装软件吗？',
+    'faq.a1': '都不需要。用 Chrome 或 Edge 打开这个网页，允许摄像头权限，站到能看见上半身的位置就能玩。所有动作识别都在你的浏览器里实时完成。',
+    'faq.q2': '我的摄像头画面会被上传或保存吗？',
+    'faq.a2': '不会。视频画面不离开你的设备，姿态识别完全在浏览器本地运行，服务器收不到任何影像。只有你主动填写的昵称、分数和评价文字会发送到服务器用于排行榜和展示。',
+    'faq.q3': '什么设备和环境玩起来最顺？',
+    'faq.a3': '笔记本或手机都可以，推荐 Chrome、Edge。房间光线充足、背景不太杂乱，并给自己留出能退后半步到一步的空间。第一次进入需要下载约 11MB 的姿态模型，之后会走浏览器缓存，再次打开很快。',
+    'faq.q4': '动作识别不准、或者手臂容易累怎么办？',
+    'faq.a4': '先确认头部、肩膀和手腕都落在画面里的安全框内，再看「识别反馈」确认动作被认到了。如果肩颈不适，把「操作舒适度」的动作幅度切到「轻柔」，小幅动作就会触发；也可以开启「减少动态效果」降低闪光和粒子。',
+    'faq.q5': '排行榜是怎么算的？一局多久？',
+    'faq.a5': '每局结束会自动提交分数，排行榜保留每款游戏的前 50 名，页面中部可以切换查看。切西瓜和俄罗斯方块都是单局几分钟的节奏，建议每局 3–5 分钟后换一款低强度玩法，避免长时间高举手臂。',
+
     // 页脚
     'footer.tagline': '用身体重新发现游戏的乐趣',
     'footer.sub': '姿态识别 · 本地数据存储 · 建议在明亮环境下体验',
@@ -697,6 +711,20 @@ const I18N = {
     'rv.anonymous': 'Anonymous',
     'rv.gameOverall': 'Overall experience',
     'rv.distAria': '{count} reviews at {n} stars',
+
+    // FAQ (also the page's real body copy, mirrored by the FAQPage structured data)
+    'faq.kicker': 'FAQ',
+    'faq.title': 'Things you might want to know first',
+    'faq.q1': 'Do I need a controller or any install?',
+    'faq.a1': 'Neither. Open this page in Chrome or Edge, allow camera access, and stand where your upper body is in frame. All motion tracking runs live in your browser.',
+    'faq.q2': 'Is my camera feed uploaded or stored?',
+    'faq.a2': 'No. The video never leaves your device — pose detection runs entirely in your browser, and the server receives no imagery. Only the nickname, score and review text you choose to submit are sent to the server for the leaderboard and display.',
+    'faq.q3': 'What device and setup work best?',
+    'faq.a3': 'A laptop or phone, ideally Chrome or Edge. Use a well-lit room with a fairly uncluttered background, and leave yourself half a step to a step of space. The first visit downloads an ~11MB pose model; afterwards it comes from the browser cache and loads fast.',
+    'faq.q4': 'What if tracking is inaccurate, or my arms get tired?',
+    'faq.a4': 'First make sure your head, shoulders and wrists all sit inside the safe frame, then check the Recognition readout to confirm the gesture registered. If your shoulders or neck are uncomfortable, switch Motion range to Gentle so smaller movements trigger; you can also turn on Reduce motion effects to cut flashing and particles.',
+    'faq.q5': 'How does the leaderboard work, and how long is a round?',
+    'faq.a5': 'Each round submits your score automatically. The leaderboard keeps the top 50 per game and you can switch between games from the middle of the page. Rounds last a few minutes — after 3–5 minutes switch to a lower-intensity game so you are not holding your arms up for too long.',
 
     // Footer
     'footer.tagline': 'Rediscover the joy of games with your body',

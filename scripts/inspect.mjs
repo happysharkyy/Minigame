@@ -59,6 +59,12 @@ const presetName = args.find((a) => !a.startsWith('--')) || 'mobile';
 const isFull = args.includes('--full');
 const evalIndex = args.indexOf('--eval');
 const customEval = evalIndex !== -1 ? args[evalIndex + 1] : null;
+// --scroll "#faqPanel": 截图前先滚到某个位置, 用来检查页面下半部分
+const scrollIndex = args.indexOf('--scroll');
+const scrollTo = scrollIndex !== -1 ? args[scrollIndex + 1] : null;
+// --open "details": 截图前展开所有匹配元素(用来检查折叠内容)
+const openIndex = args.indexOf('--open');
+const openSelector = openIndex !== -1 ? args[openIndex + 1] : null;
 
 let viewport;
 if (PRESETS[presetName]) {
@@ -261,6 +267,21 @@ const overflowing = overflowResult.result?.value || [];
 
 // ── 截图 ────────────────────────────────────
 fs.mkdirSync(outDir, { recursive: true });
+
+if (openSelector) {
+  await send('Runtime.evaluate', {
+    expression: `document.querySelectorAll(${JSON.stringify(openSelector)}).forEach((el) => { if (el.tagName === 'DETAILS') el.open = true; })`,
+  }, sessionId);
+  await delay(300);
+}
+if (scrollTo) {
+  await send('Runtime.evaluate', {
+    expression: `(() => { const el = document.querySelector(${JSON.stringify(scrollTo)}); if (el) el.scrollIntoView({ block: 'start' }); return !!el; })()`,
+    returnByValue: true,
+  }, sessionId);
+  await delay(400);
+}
+
 let clip;
 if (isFull) {
   const heightResult = await send('Runtime.evaluate', {
@@ -275,7 +296,7 @@ const shot = await send('Page.captureScreenshot', {
   ...(clip ? { clip } : {}),
 }, sessionId);
 
-const fileName = `${presetName}${isFull ? '-full' : ''}.png`;
+const fileName = `${presetName}${isFull ? '-full' : scrollTo ? '-scrolled' : ''}.png`;
 const outFile = path.join(outDir, fileName);
 fs.writeFileSync(outFile, Buffer.from(shot.data, 'base64'));
 
