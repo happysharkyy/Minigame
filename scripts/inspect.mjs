@@ -99,11 +99,26 @@ const server = http.createServer((req, res) => {
   if (!file.startsWith(dist)) return res.writeHead(403).end();
   if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
     if (p.startsWith('/api/')) {
-      // 后端不存在时给前端合法的空数据, 免得错误提示挡住要看的布局
+      // 后端不存在时给前端合法的示例数据 —— 空数据会让评价/排行榜区域整块隐藏,
+      // 那样截图就看不到这些区块的真实排版
+      const now = Date.now();
       const body = p.includes('/reviews')
-        ? '{"ok":true,"total":0,"average":0,"distribution":{},"reviews":[]}'
-        : p.includes('/messages') ? '{"ok":true,"count":0,"messages":[]}'
-          : p.includes('/scores') ? '{"ok":true,"games":{"tetris":[],"fruit":[]}}' : '{"ok":true}';
+        ? JSON.stringify({
+          ok: true,
+          total: 7,
+          average: 4.3,
+          distribution: { 1: 0, 2: 1, 3: 1, 4: 2, 5: 3 },
+          reviews: [
+            { id: 'a', rating: 5, tags: ['accurate', 'addictive'], comment: '切西瓜很上头，识别比我预期准', name: '小明', game: 'fruit', lang: 'zh', createdAt: now - 120000 },
+            { id: 'b', rating: 3, tags: ['laggy'], comment: '老笔记本上偶尔掉帧', name: 'Anonymous', game: 'tetris', lang: 'zh', createdAt: now - 3600000 },
+            { id: 'c', rating: 4, tags: ['fun', 'easy'], comment: '', name: 'Mia', game: 'overall', lang: 'en', createdAt: now - 7200000 },
+          ],
+        })
+        : p.includes('/messages')
+          ? '{"ok":true,"count":2,"messages":[{"id":"m1","name":"Aki","content":"希望能加双人模式","lang":"zh","createdAt":' + now + '},{"id":"m2","name":"Ben","content":"Star Relay looks fun!","lang":"en","createdAt":' + now + '}]}'
+          : p.includes('/scores')
+            ? '{"ok":true,"games":{"tetris":[{"id":"s1","name":"Aki","score":2400,"lang":"zh","createdAt":' + now + '},{"id":"s2","name":"Ben","score":1800,"lang":"en","createdAt":' + now + '}],"fruit":[{"id":"s3","name":"Mia","score":640,"lang":"en","createdAt":' + now + '}]}}'
+            : '{"ok":true}';
       return res.writeHead(200, { 'Content-Type': 'application/json' }).end(body);
     }
     file = path.join(dist, 'index.html');

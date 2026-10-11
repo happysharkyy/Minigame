@@ -77,6 +77,7 @@ function renderSummary() {
     els.summaryValue.textContent = '—';
     els.summaryMeta.textContent = t('rv.noReviews');
     els.distribution.innerHTML = '';
+    renderJump();
     return;
   }
   els.summaryValue.textContent = average.toFixed(1);
@@ -97,6 +98,32 @@ function renderSummary() {
   }
   els.distribution.innerHTML = '';
   els.distribution.appendChild(frag);
+
+  renderJump();
+}
+
+// 排行榜里的聚合评分入口: 评价面板在页面很靠后, 这个按钮是它主要的曝光位。
+// 一条评价都没有时不显示 —— 空的"0 条评价"只会让人觉得这站没人用。
+function renderJump() {
+  if (!els?.jump) return;
+  if (!stats.total) {
+    els.jump.classList.add('hidden');
+    return;
+  }
+  els.jumpStars.textContent = starString(stats.average);
+  els.jumpText.textContent = tf('rv.jumpSummary', {
+    avg: stats.average.toFixed(1),
+    count: stats.total,
+  });
+  els.jump.setAttribute('aria-label', t('rv.jumpCta'));
+  els.jump.classList.remove('hidden');
+}
+
+function scrollToReviewForm() {
+  const panel = document.querySelector('#reviewPanel');
+  if (!panel) return;
+  panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => panel.querySelector('.star-btn')?.focus({ preventScroll: true }), 400);
 }
 
 function renderList() {
@@ -342,6 +369,10 @@ function initReviewBoard() {
     empty: panel.querySelector('#reviewEmpty'),
     error: panel.querySelector('#reviewError'),
     gameHint: panel.querySelector('#reviewGameHint'),
+    // 聚合评分入口在排行榜面板里(见 index.html), 所以不在 panel 内查找
+    jump: document.querySelector('#reviewJump'),
+    jumpStars: document.querySelector('#reviewJumpStars'),
+    jumpText: document.querySelector('#reviewJumpText'),
   };
 
   els.name.value = savedName();
@@ -351,6 +382,7 @@ function initReviewBoard() {
   });
 
   panel.addEventListener('submit', handleSubmit);
+  els.jump?.addEventListener('click', scrollToReviewForm);
 
   buildStars();
   buildTags();
@@ -392,4 +424,4 @@ function hasRated() {
   }
 }
 
-export { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated, RATED_KEY };
+export { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated, scrollToReviewForm, RATED_KEY };

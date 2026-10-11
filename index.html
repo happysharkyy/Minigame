@@ -292,6 +292,13 @@
           <div class="lb-list" id="lbList" aria-live="polite"></div>
           <p class="lb-empty hidden" id="lbEmpty" data-i18n="lb.empty">还没有成绩，快来创造第一分吧！</p>
           <p class="lb-error hidden" id="lbError" data-i18n="lb.loadError">排行榜暂时无法连接，请稍后再试。</p>
+
+          <!-- 评价入口: 评分面板在页面很靠后的位置, 排行榜这里放一个聚合评分入口,
+               既是社会认同, 也给评价体系一条能被走到的路。数据与渲染由 reviewBoard.js 负责 -->
+          <button class="review-jump hidden" id="reviewJump" type="button">
+            <span class="review-jump-stars" id="reviewJumpStars" aria-hidden="true">★★★★★</span>
+            <span class="review-jump-text" id="reviewJumpText" data-i18n="rv.jumpCta">看看大家怎么说 →</span>
+          </button>
         </section>
 
         <aside class="coach-column">

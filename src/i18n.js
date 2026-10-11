@@ -348,6 +348,8 @@ const I18N = {
     'rv.anonymous': '匿名玩家',
     'rv.gameOverall': '整体体验',
     'rv.distAria': '{n} 星共 {count} 条',
+    'rv.jumpCta': '看看大家怎么说 →',
+    'rv.jumpSummary': '{avg} 分 · {count} 条评价',
 
     // 常见问题(同时是页面正文, 与 FAQPage 结构化数据一一对应)
     'faq.kicker': '常见问题',
@@ -711,6 +713,8 @@ const I18N = {
     'rv.anonymous': 'Anonymous',
     'rv.gameOverall': 'Overall experience',
     'rv.distAria': '{count} reviews at {n} stars',
+    'rv.jumpCta': 'See what players say →',
+    'rv.jumpSummary': '{avg} · {count} reviews',
 
     // FAQ (also the page's real body copy, mirrored by the FAQPage structured data)
     'faq.kicker': 'FAQ',

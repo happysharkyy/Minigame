@@ -2,7 +2,7 @@ import { PoseLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
 import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
 import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
 import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from './leaderboard.js';
-import { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated } from './reviewBoard.js';
+import { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated, scrollToReviewForm } from './reviewBoard.js';
 import { computeRoundResult } from './roundResult.js';
 import { initSfx, isEnabled as sfxEnabled, play as playSfx, setEnabled as setSfxEnabled } from './sfx.js';
 
@@ -2508,13 +2508,7 @@ function setupEvents() {
   });
 
   // 结算卡片里的"给个评分"直接把人送到评价面板, 别让用户自己找
-  resultReviewBtn?.addEventListener('click', () => {
-    const panel = document.querySelector('#reviewPanel');
-    if (!panel) return;
-    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    const firstStar = panel.querySelector('.star-btn');
-    setTimeout(() => firstStar?.focus({ preventScroll: true }), 400);
-  });
+  resultReviewBtn?.addEventListener('click', scrollToReviewForm);
   // 点遮罩空白处也关闭
   helpDialog?.addEventListener('click', (event) => {
     if (event.target === helpDialog) closeHelp();

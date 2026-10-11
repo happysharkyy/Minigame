@@ -1027,6 +1027,30 @@ button:active { transform: translateY(1px); }
 
 .review-error { border-color: rgba(255, 123, 139, .25); color: var(--danger); }
 
+/* 排行榜里的聚合评分入口(点进评价面板) */
+.review-jump {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px 13px;
+  border: 1px dashed rgba(139, 245, 220, .26);
+  border-radius: 12px;
+  background: rgba(139, 245, 220, .05);
+  color: #cfe8e1;
+  font-size: .74rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.review-jump:hover { background: rgba(139, 245, 220, .11); border-color: rgba(139, 245, 220, .4); }
+.review-jump.hidden { display: none; }
+.review-jump-stars { color: var(--orange); letter-spacing: 1px; font-size: .8rem; }
+.review-jump-text { flex: 1; min-width: 0; }
+.review-jump::after { content: '→'; color: var(--mint); }
+
 /* ── 常见问题 ───────────────────────────── */
 .faq-panel {
   margin-top: 16px;
