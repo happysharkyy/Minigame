@@ -154,6 +154,18 @@ const CHECKS = [
       .every((id) => dom.includes(`id="${id}"`)),
     detail: '结算卡片缺少元素, 局末会看不到分数/个人最佳/差距',
   },
+  {
+    // 摄像头用的是 Chrome 的假设备, 所以这条能在无摄像头的机器上跑; 它验证的是
+    // 授权 -> 并行加载 wasm/模型 -> 姿态图启动 这条核心链路真的走通了
+    name: 'MediaPipe 姿态图成功启动(摄像头→模型→推理 端到端)',
+    test: (_dom, log) => /Graph successfully started running/.test(log),
+    detail: '浏览器日志里没有 "Graph successfully started running", 姿态识别链路没能初始化',
+  },
+  {
+    name: '页面没有未捕获异常',
+    test: (_dom, log) => !/Uncaught|ERROR:CONSOLE|SyntaxError|TypeError/i.test(log),
+    detail: '控制台出现未捕获异常, 见下方日志',
+  },
 ];
 
 const browser = findBrowser();
@@ -187,7 +199,7 @@ if (!dom || dom.length < 500) {
 
 let failed = 0;
 for (const check of CHECKS) {
-  const ok = check.test(dom);
+  const ok = check.test(dom, browserLog);
   console.log(`${ok ? '✓' : '✗'} ${check.name}`);
   if (!ok) {
     console.error(`    ${check.detail}`);
@@ -195,22 +207,11 @@ for (const check of CHECKS) {
   }
 }
 
-// 未捕获异常: DOM 断言可能漏掉"渲染完了但中途抛错"的情况, 这里补一道
-const errors = browserLog
-  .split('\n')
-  .filter((line) => /Uncaught|ERROR:CONSOLE|SyntaxError|TypeError/i.test(line))
-  .map((line) => line.trim())
-  .filter(Boolean);
-const logLines = browserLog.split('\n').filter(Boolean).length;
-
-if (errors.length > 0) {
-  console.error(`✗ 页面控制台出现 ${errors.length} 条错误(共 ${logLines} 行日志):`);
-  errors.slice(0, 8).forEach((line) => console.error(`    ${line.slice(0, 200)}`));
-  failed += 1;
-} else if (logLines > 0) {
-  console.log(`✓ 没有未捕获异常(共 ${logLines} 行浏览器日志)`);
-} else {
-  console.log('(浏览器未输出日志, 跳过异常检查)');
+// 失败时把日志打出来便于定位; SMOKE_VERBOSE=1 则总是打印
+const failedChecks = CHECKS.filter((check) => !check.test(dom, browserLog));
+if (failedChecks.length > 0 || process.env.SMOKE_VERBOSE === '1') {
+  console.log('--- 浏览器日志 ---');
+  browserLog.split('\n').filter(Boolean).forEach((line) => console.log(`    ${line.slice(0, 200)}`));
 }
 
 console.log(failed === 0 ? '\n全部通过' : `\n${failed} 项失败`);

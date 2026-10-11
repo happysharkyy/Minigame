@@ -2255,25 +2255,31 @@ function isMobileDevice() {
 }
 
 async function initPose() {
-  setCameraStatus('camera.status.loading');
+  // 模型与摄像头现在是并行加载的, 摄像头可能已经判定失败(用户拒绝授权)。
+  // 那种情况下不要再让模型加载的阶段消息覆盖掉"摄像头不可用"的提示。
+  const reportPoseStatus = (key) => {
+    if (!startupFailure) setCameraStatus(key);
+  };
+
+  reportPoseStatus('camera.status.loading');
   const vision = await withTimeout(FilesetResolver.forVisionTasks('/mediapipe/wasm'), MODEL_LOAD_TIMEOUT);
 
   // 移动端 GPU delegate 在部分浏览器(尤其 iOS Safari)创建模型时会无限挂起而不抛错,
   // 导致「GPU 失败就退回 CPU」的 fallback 永远不触发,页面一直停在「加载模型中」。
   // 所以移动端直接走 CPU,并用超时兜底,确保一定会失败前进。
   if (isMobileDevice()) {
-    setCameraStatus('camera.status.cpu');
+    reportPoseStatus('camera.status.cpu');
     poseLandmarker = await withTimeout(createPoseLandmarker(vision, 'CPU'), MODEL_LOAD_TIMEOUT);
     return;
   }
 
   try {
     poseLandmarker = await withTimeout(createPoseLandmarker(vision, 'GPU'), GPU_ATTEMPT_TIMEOUT);
-    setCameraStatus('camera.status.gpu');
+    reportPoseStatus('camera.status.gpu');
   } catch (gpuError) {
     console.warn('GPU delegate failed or timed out, fallback to CPU.', gpuError);
     poseLandmarker = await withTimeout(createPoseLandmarker(vision, 'CPU'), MODEL_LOAD_TIMEOUT);
-    setCameraStatus('camera.status.cpu');
+    reportPoseStatus('camera.status.cpu');
   }
 }
 
@@ -2602,9 +2608,19 @@ async function bootstrap() {
   setupEvents();
   drawCurrentGame();
 
+  // 摄像头授权弹窗那几秒原本是完全空等的: 授权通过后才开始下模型。
+  // 这里让姿态模型(wasm 11.5MB + 模型 9.4MB)与授权并行开始, 用户点"允许"时通常已经下完。
+  // 结果仍按"先摄像头、后模型"的顺序处理, 所以错误提示的优先级没变。
+  let poseReady = false;
+  const posePromise = (async () => {
+    await initPose();
+    poseReady = true;
+  })();
+  // 摄像头失败时就不 await 它了, 但必须挂个 catch, 否则会留下未处理的 rejection
+  posePromise.catch(() => {});
+
   try {
     await initCamera();
-
   } catch (error) {
     console.error(error);
     startupFailure = { kind: 'camera', error };
@@ -2617,11 +2633,13 @@ async function bootstrap() {
   }
 
   try {
-    // 模型加载可能较久(首次需下载模型文件),先把覆盖层切到加载提示。
-    modelLoading = true;
-    updateGameOverlay(true, t('overlay.modelLoading'), t('overlay.modelLoadingHint'));
+    // 模型可能已经在后台下好了, 那就不要闪一下"正在加载"的提示
+    if (!poseReady) {
+      modelLoading = true;
+      updateGameOverlay(true, t('overlay.modelLoading'), t('overlay.modelLoadingHint'));
+    }
 
-    await initPose();
+    await posePromise;
     modelLoading = false;
     setCameraStatus('camera.status.tracking');
     const meta = getCurrentMeta();
