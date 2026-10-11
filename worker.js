@@ -38,6 +38,8 @@ export default {
       }
     }
 
+    // 静态资源的响应头不在这里改: Workers 静态资源对"确实存在的文件"会直接返回、
+    // 根本不进 Worker, 所以改不到。缓存策略统一写在 public/_headers 里(Cloudflare 会解析)。
     return env.ASSETS.fetch(request);
   },
 };

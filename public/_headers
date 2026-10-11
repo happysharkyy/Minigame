@@ -1,0 +1,31 @@
+# 静态资源响应头 (Cloudflare Workers 静态资源会解析这个文件, 它本身不会被当成资源返回)
+#
+# 为什么需要: Cloudflare 默认对所有资源发 `public, max-age=0, must-revalidate`,
+# 于是浏览器每次访问都要为全部资源发一次条件请求 —— 包括 4MB 的姿态模型和 7.5MB 的 wasm。
+# 这个体感页面每次游玩都依赖这两个大文件, 回访时它们本该直接命中本地缓存。
+#
+# 分档依据是"文件名变了内容才会变":
+# - /assets/* 由 Vite 生成, 文件名带内容哈希 -> 可以永久缓存
+# - 模型/运行时/图片按固定文件名发布, 极少变动 -> 给一周并允许后台续期
+# - HTML 不加规则: 保持默认的必须校验, 否则发版后用户会一直看到旧页面
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/models/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/mediapipe/*
+  Cache-Control: public, max-age=604800, stale-while-revalidate=86400
+
+/fruits/*
+  Cache-Control: public, max-age=604800
+
+/favicon.svg
+  Cache-Control: public, max-age=604800
+
+/apple-touch-icon.png
+  Cache-Control: public, max-age=604800
+
+/og-image.png
+  Cache-Control: public, max-age=604800
