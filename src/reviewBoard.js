@@ -17,7 +17,7 @@ let hoverRating = 0;
 let selectedTags = new Set();
 let submitting = false;
 let reviews = [];
-let stats = { total: 0, average: 0, distribution: {} };
+let stats = { total: 0, average: 0, distribution: {}, byGame: {} };
 let currentGame = 'overall';
 let lastSubmitAt = 0;
 
@@ -100,6 +100,32 @@ function renderSummary() {
   els.distribution.appendChild(frag);
 
   renderJump();
+  renderByGame();
+}
+
+// 分游戏看: 整体平均分看不出"哪款更好玩", 而这款差异才是决定下一步优化什么的信息。
+// 数据由服务端遍历全量评价算出(客户端只能看到最近一页, 会算少)。
+function renderByGame() {
+  if (!els?.byGame) return;
+
+  const entries = Object.entries(stats.byGame || {})
+    .filter(([, value]) => value && value.count > 0)
+    .sort((a, b) => b[1].count - a[1].count);
+
+  // 只有一个分组时与上面的大分数完全重复, 不如不显示
+  if (entries.length < 2) {
+    els.byGame.classList.add('hidden');
+    els.byGame.innerHTML = '';
+    return;
+  }
+
+  els.byGame.innerHTML = `<span class="review-feed-label">${esc(t('rv.byGame'))}</span>`
+    + entries.map(([game, value]) => {
+      const title = game === 'overall' ? t('rv.gameOverall') : t(`lib.${game}.title`);
+      const row = tf('rv.byGameRow', { avg: value.average ?? 0, count: value.count });
+      return `<span class="bygame-row"><b>${esc(title)}</b>${esc(row)}</span>`;
+    }).join('');
+  els.byGame.classList.remove('hidden');
 }
 
 // 排行榜里的聚合评分入口: 评价面板在页面很靠后, 这个按钮是它主要的曝光位。
@@ -179,10 +205,11 @@ async function fetchReviews() {
       total: Number(data.total) || 0,
       average: Number(data.average) || 0,
       distribution: data.distribution || {},
+      byGame: data.byGame || {},
     };
   } catch (err) {
     reviews = [];
-    stats = { total: 0, average: 0, distribution: {} };
+    stats = { total: 0, average: 0, distribution: {}, byGame: {} };
     els.error.textContent = t('rv.loadError');
     els.error.classList.remove('hidden');
   }
@@ -262,6 +289,7 @@ async function handleSubmit(event) {
         total: Number(data.stats.total) || stats.total,
         average: Number(data.stats.average) || stats.average,
         distribution: data.stats.distribution || stats.distribution,
+        byGame: data.stats.byGame || stats.byGame,
       };
     }
 
@@ -368,6 +396,7 @@ function initReviewBoard() {
     list: panel.querySelector('#reviewList'),
     empty: panel.querySelector('#reviewEmpty'),
     error: panel.querySelector('#reviewError'),
+    byGame: panel.querySelector('#reviewByGame'),
     gameHint: panel.querySelector('#reviewGameHint'),
     // 聚合评分入口在排行榜面板里(见 index.html), 所以不在 panel 内查找
     jump: document.querySelector('#reviewJump'),

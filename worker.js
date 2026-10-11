@@ -258,16 +258,31 @@ export class ArcadeStore extends DurableObject {
     const list = await this.read('reviews', []);
     const reviews = (Array.isArray(list) ? list : []).slice().sort((a, b) => b.createdAt - a.createdAt);
     const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    // 按游戏分组统计: "切西瓜 4.6 / 俄罗斯方块 4.1"这种差异才是对产品最有用的信息,
+    // 只在客户端按返回的那一页算会漏掉更早的评价, 所以在服务端遍历全量
+    const byGame = {};
     let sum = 0;
     reviews.forEach((review) => {
       const rating = Math.min(MAX_RATING, Math.max(MIN_RATING, Math.round(review.rating)));
       distribution[rating] += 1;
       sum += rating;
+
+      const game = GAME_IDS.includes(review.game) ? review.game : 'overall';
+      if (!byGame[game]) byGame[game] = { count: 0, sum: 0 };
+      byGame[game].count += 1;
+      byGame[game].sum += rating;
     });
+    Object.keys(byGame).forEach((game) => {
+      const entry = byGame[game];
+      entry.average = Math.round((entry.sum / entry.count) * 10) / 10;
+      delete entry.sum;
+    });
+
     const total = reviews.length;
     return {
       total,
       distribution,
+      byGame,
       average: total ? Math.round((sum / total) * 10) / 10 : 0,
       reviews: reviews.slice(0, limit),
     };
@@ -297,7 +312,15 @@ export class ArcadeStore extends DurableObject {
     await this.ctx.storage.put('reviews', trimmed);
 
     const stats = await this.getReviews(1);
-    return { review, stats: { total: stats.total, average: stats.average, distribution: stats.distribution } };
+    return {
+      review,
+      stats: {
+        total: stats.total,
+        average: stats.average,
+        distribution: stats.distribution,
+        byGame: stats.byGame,
+      },
+    };
   }
 
   // 每小时最多 MAIL_BUDGET_PER_HOUR 封提醒, 避免被刷爆邮箱

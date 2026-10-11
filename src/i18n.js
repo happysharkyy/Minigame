@@ -350,6 +350,8 @@ const I18N = {
     'rv.distAria': '{n} 星共 {count} 条',
     'rv.jumpCta': '看看大家怎么说 →',
     'rv.jumpSummary': '{avg} 分 · {count} 条评价',
+    'rv.byGame': '分游戏看',
+    'rv.byGameRow': '{avg} 分 · {count} 条',
 
     // 常见问题(同时是页面正文, 与 FAQPage 结构化数据一一对应)
     'faq.kicker': '常见问题',
@@ -715,6 +717,8 @@ const I18N = {
     'rv.distAria': '{count} reviews at {n} stars',
     'rv.jumpCta': 'See what players say →',
     'rv.jumpSummary': '{avg} · {count} reviews',
+    'rv.byGame': 'By game',
+    'rv.byGameRow': '{avg} · {count} reviews',
 
     // FAQ (also the page's real body copy, mirrored by the FAQPage structured data)
     'faq.kicker': 'FAQ',

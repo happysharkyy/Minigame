@@ -108,6 +108,7 @@ const server = http.createServer((req, res) => {
           total: 7,
           average: 4.3,
           distribution: { 1: 0, 2: 1, 3: 1, 4: 2, 5: 3 },
+          byGame: { fruit: { count: 3, average: 4.7 }, tetris: { count: 2, average: 3.5 }, overall: { count: 2, average: 4.5 } },
           reviews: [
             { id: 'a', rating: 5, tags: ['accurate', 'addictive'], comment: '切西瓜很上头，识别比我预期准', name: '小明', game: 'fruit', lang: 'zh', createdAt: now - 120000 },
             { id: 'b', rating: 3, tags: ['laggy'], comment: '老笔记本上偶尔掉帧', name: 'Anonymous', game: 'tetris', lang: 'zh', createdAt: now - 3600000 },

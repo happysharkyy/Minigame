@@ -982,6 +982,22 @@ button:active { transform: translateY(1px); }
 .rating-bar-track i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--orange), #ffd9a8); }
 .rating-bar-count { color: #66718a; font-size: .6rem; text-align: right; }
 
+/* 分游戏评分: 一眼看出哪款更好玩 */
+.review-bygame { display: grid; gap: 5px; margin-top: 4px; }
+.review-bygame.hidden { display: none; }
+.bygame-row {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, .028);
+  color: var(--muted);
+  font-size: .64rem;
+}
+.bygame-row b { color: #cdd7e8; font-size: .68rem; }
+
 .review-feed-label {
   margin-top: 4px;
   color: #7f8ba6;

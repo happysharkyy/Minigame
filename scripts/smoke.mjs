@@ -47,10 +47,32 @@ function startServer() {
       return;
     }
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-      // API 在冒烟环境里不存在, 返回 404 让前端走错误分支(不影响本次断言)
+      // API 在冒烟环境里不存在。返回示例数据而不是 404: 空数据会让评价/排行榜区块整块
+      // 隐藏, 那样这些区域就永远没被真正渲染过, 断言也就覆盖不到它们。
       if (urlPath.startsWith('/api/')) {
-        res.writeHead(404, { 'Content-Type': 'application/json' }).end('{"ok":false}');
-        return;
+        const now = Date.now();
+        const body = urlPath.includes('/reviews')
+          ? JSON.stringify({
+            ok: true,
+            total: 7,
+            average: 4.3,
+            distribution: { 1: 0, 2: 1, 3: 1, 4: 2, 5: 3 },
+            byGame: {
+              fruit: { count: 3, average: 4.7 },
+              tetris: { count: 2, average: 3.5 },
+              overall: { count: 2, average: 4.5 },
+            },
+            reviews: [
+              { id: 'a', rating: 5, tags: ['accurate', 'addictive'], comment: '切西瓜很上头', name: '小明', game: 'fruit', lang: 'zh', createdAt: now - 60000 },
+              { id: 'b', rating: 3, tags: ['laggy'], comment: '老笔记本偶尔掉帧', name: 'Anonymous', game: 'tetris', lang: 'zh', createdAt: now - 3600000 },
+            ],
+          })
+          : urlPath.includes('/messages')
+            ? '{"ok":true,"count":1,"messages":[{"id":"m1","name":"Aki","content":"希望能加双人模式","lang":"zh","createdAt":' + now + '}]}'
+            : urlPath.includes('/scores')
+              ? '{"ok":true,"games":{"tetris":[{"id":"s1","name":"Aki","score":2400,"lang":"zh","createdAt":' + now + '}],"fruit":[]}}'
+              : '{"ok":true}';
+        return res.writeHead(200, { 'Content-Type': 'application/json' }).end(body);
       }
       filePath = path.join(dist, 'index.html');
     }
@@ -193,6 +215,28 @@ const CHECKS = [
     test: (dom) => dom.includes('视频画面不离开你的设备') || dom.includes('The video never leaves your device'),
     detail: '页面上找不到"画面不会被上传"的说明 —— 这是摄像头类产品最该正面回答的问题',
   },
+  {
+    name: '有评价数据时: 评分入口与分游戏评分都渲染出来',
+    test: (dom) => {
+      const rows = (dom.match(/class="bygame-row"/g) || []).length;
+      // 别依赖属性顺序: 模板里是 class 在前、id 在后, 之前正是这个写反了
+      const jumpVisible = /<button class="review-jump" id="reviewJump"/.test(dom);
+      const byGameVisible = dom.includes('id="reviewByGame"') && !/class="review-bygame hidden"/.test(dom);
+      return rows === 3 && jumpVisible && byGameVisible;
+    },
+    detail: '评分入口或分游戏评分没有渲染(bygame-row 应为 3 个: 切西瓜/俄罗斯方块/整体体验)',
+    debug: (dom) => ({
+      rows: (dom.match(/class="bygame-row"/g) || []).length,
+      jumpVisible: /<button class="review-jump" id="reviewJump"/.test(dom),
+      byGameVisible: dom.includes('id="reviewByGame"') && !/class="review-bygame hidden"/.test(dom),
+    }),
+  },
+
+  {
+    name: '有成绩数据时: 排行榜列表真的渲染出条目',
+    test: (dom) => /class="lb-row|class="lb-item|lb-medal/.test(dom) || dom.includes('2400'),
+    detail: '排行榜有数据但没有渲染出条目',
+  },
 ];
 
 const browser = findBrowser();
@@ -230,6 +274,7 @@ for (const check of CHECKS) {
   console.log(`${ok ? '✓' : '✗'} ${check.name}`);
   if (!ok) {
     console.error(`    ${check.detail}`);
+    if (check.debug) console.error('    诊断:', JSON.stringify(check.debug(dom)));
     failed += 1;
   }
 }

@@ -203,14 +203,25 @@ function readReviews() {
 
 function summarizeReviews(list) {
   const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const byGame = {};
   let sum = 0;
   list.forEach((review) => {
     const rating = Math.min(5, Math.max(1, Math.round(review.rating)));
     distribution[rating] += 1;
     sum += rating;
+
+    const game = GAME_IDS.includes(review.game) ? review.game : 'overall';
+    if (!byGame[game]) byGame[game] = { count: 0, sum: 0 };
+    byGame[game].count += 1;
+    byGame[game].sum += rating;
+  });
+  Object.keys(byGame).forEach((game) => {
+    const entry = byGame[game];
+    entry.average = Math.round((entry.sum / entry.count) * 10) / 10;
+    delete entry.sum;
   });
   const total = list.length;
-  return { total, distribution, average: total ? Math.round((sum / total) * 10) / 10 : 0 };
+  return { total, distribution, byGame, average: total ? Math.round((sum / total) * 10) / 10 : 0 };
 }
 
 app.get('/api/reviews', (req, res) => {
