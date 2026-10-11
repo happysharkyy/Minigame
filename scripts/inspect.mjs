@@ -1,0 +1,292 @@
+// scripts/inspect.mjs — 用 CDP 在真实移动端视口下截图 + 量布局
+//
+// 为什么不用 --window-size: Windows 上 Edge/Chrome 的窗口有最小宽度(实测约 518px),
+// 传 --window-size=390 会被夹到 518 —— 截出来的图只有左半边, 看起来像"元素被裁掉了",
+// 其实是拍到了更宽的布局。真实手机视口只能靠 CDP 的 Emulation.setDeviceMetricsOverride。
+//
+// 用法(需要 Node 20 的 --experimental-websocket; Node 22+ 可省略):
+//   npm run inspect -- mobile            # 390x844 手机竖屏, 首屏
+//   npm run inspect -- mobile --full     # 手机整页
+//   npm run inspect -- desktop           # 1440x900
+//   npm run inspect -- 360x780 --full    # 自定义尺寸
+//   npm run inspect -- mobile --eval "getComputedStyle(document.body).fontSize"
+
+import { spawn } from 'node:child_process';
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+
+if (typeof WebSocket === 'undefined') {
+  console.error('需要 WebSocket 支持: 请用 Node 20 时加 --experimental-websocket 运行');
+  console.error('  node --experimental-websocket scripts/inspect.mjs mobile');
+  process.exit(1);
+}
+
+const root = path.resolve(import.meta.dirname, '..');
+const dist = path.join(root, 'dist');
+const outDir = path.join(root, '.screenshots');
+const PORT = Number(process.env.INSPECT_PORT) || 8795;
+// 固定端口会被上一次没退干净的浏览器进程占住("连不上调试端口"), 所以每次换一个
+const CDP_PORT = Number(process.env.INSPECT_CDP_PORT) || (9300 + Math.floor(Math.random() * 400));
+
+const PRESETS = {
+  mobile: { w: 390, h: 844, dpr: 2, mobile: true, label: '手机竖屏 (iPhone 14 尺寸)' },
+  'mobile-small': { w: 360, h: 780, dpr: 2, mobile: true, label: '小屏手机' },
+  'mobile-landscape': { w: 844, h: 390, dpr: 2, mobile: true, label: '手机横屏' },
+  tablet: { w: 768, h: 1024, dpr: 2, mobile: true, label: '平板' },
+  desktop: { w: 1440, h: 900, dpr: 1, mobile: false, label: '桌面' },
+  'desktop-narrow': { w: 1100, h: 800, dpr: 1, mobile: false, label: '窄桌面' },
+};
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml', '.png': 'image/png', '.wasm': 'application/wasm',
+  '.task': 'application/octet-stream', '.xml': 'application/xml', '.txt': 'text/plain; charset=utf-8',
+};
+
+const BROWSERS = [
+  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+  'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  '/usr/bin/google-chrome',
+  '/usr/bin/chromium',
+];
+
+const args = process.argv.slice(2);
+const presetName = args.find((a) => !a.startsWith('--')) || 'mobile';
+const isFull = args.includes('--full');
+const evalIndex = args.indexOf('--eval');
+const customEval = evalIndex !== -1 ? args[evalIndex + 1] : null;
+
+let viewport;
+if (PRESETS[presetName]) {
+  viewport = PRESETS[presetName];
+} else if (/^\d+x\d+$/.test(presetName)) {
+  const [w, h] = presetName.split('x').map(Number);
+  viewport = { w, h, dpr: 1, mobile: w < 700, label: `自定义 ${w}x${h}` };
+} else {
+  console.error(`未知视口: ${presetName}\n可用: ${Object.keys(PRESETS).join(', ')}, 或 390x844`);
+  process.exit(1);
+}
+
+if (!fs.existsSync(path.join(dist, 'index.html'))) {
+  console.error('✗ dist/index.html 不存在, 请先 npm run build');
+  process.exit(1);
+}
+const browser = BROWSERS.find((c) => fs.existsSync(c));
+if (!browser) {
+  console.error('✗ 找不到 Edge/Chrome');
+  process.exit(1);
+}
+
+const delay = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// ── 静态服务器 ──────────────────────────────
+const server = http.createServer((req, res) => {
+  const p = decodeURIComponent(new URL(req.url, 'http://local').pathname);
+  let file = path.join(dist, p);
+  if (!file.startsWith(dist)) return res.writeHead(403).end();
+  if (!fs.existsSync(file) || fs.statSync(file).isDirectory()) {
+    if (p.startsWith('/api/')) {
+      // 后端不存在时给前端合法的空数据, 免得错误提示挡住要看的布局
+      const body = p.includes('/reviews')
+        ? '{"ok":true,"total":0,"average":0,"distribution":{},"reviews":[]}'
+        : p.includes('/messages') ? '{"ok":true,"count":0,"messages":[]}'
+          : p.includes('/scores') ? '{"ok":true,"games":{"tetris":[],"fruit":[]}}' : '{"ok":true}';
+      return res.writeHead(200, { 'Content-Type': 'application/json' }).end(body);
+    }
+    file = path.join(dist, 'index.html');
+  }
+  res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
+  fs.createReadStream(file).pipe(res);
+});
+await new Promise((r) => server.listen(PORT, '127.0.0.1', r));
+
+// ── 启动浏览器 + CDP ────────────────────────
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'cdp-'));
+const child = spawn(browser, [
+  '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
+  `--user-data-dir=${profile}`, `--remote-debugging-port=${CDP_PORT}`,
+  '--window-size=1200,900', '--hide-scrollbars',
+  '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream',
+  'about:blank',
+]);
+
+let version = null;
+for (let i = 0; i < 40 && !version; i += 1) {
+  await delay(250);
+  try {
+    version = await (await fetch(`http://127.0.0.1:${CDP_PORT}/json/version`)).json();
+  } catch { /* 还没起来 */ }
+}
+if (!version) {
+  child.kill();
+  server.close();
+  console.error('✗ 连不上浏览器调试端口');
+  process.exit(1);
+}
+
+const ws = new WebSocket(version.webSocketDebuggerUrl);
+await new Promise((resolve, reject) => {
+  ws.addEventListener('open', resolve, { once: true });
+  ws.addEventListener('error', reject, { once: true });
+});
+
+let nextId = 0;
+const pending = new Map();
+const listeners = new Map();
+
+ws.addEventListener('message', (event) => {
+  const msg = JSON.parse(event.data);
+  if (msg.id && pending.has(msg.id)) {
+    pending.get(msg.id)(msg);
+    pending.delete(msg.id);
+    return;
+  }
+  const key = `${msg.sessionId || ''}:${msg.method}`;
+  const queue = listeners.get(key);
+  if (queue && queue.length) queue.shift()(msg.params);
+});
+
+function send(method, params = {}, sessionId) {
+  const id = (nextId += 1);
+  return new Promise((resolve, reject) => {
+    pending.set(id, (msg) => (msg.error ? reject(new Error(`${method}: ${msg.error.message}`)) : resolve(msg.result)));
+    ws.send(JSON.stringify(sessionId ? { id, method, params, sessionId } : { id, method, params }));
+  });
+}
+
+function once(method, sessionId) {
+  return new Promise((resolve) => {
+    const key = `${sessionId || ''}:${method}`;
+    if (!listeners.has(key)) listeners.set(key, []);
+    listeners.get(key).push(resolve);
+  });
+}
+
+const { targetId } = await send('Target.createTarget', { url: 'about:blank' });
+const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
+await send('Page.enable', {}, sessionId);
+await send('Runtime.enable', {}, sessionId);
+await send('Emulation.setDeviceMetricsOverride', {
+  width: viewport.w,
+  height: viewport.h,
+  deviceScaleFactor: viewport.dpr,
+  mobile: viewport.mobile,
+}, sessionId);
+if (viewport.mobile) {
+  await send('Emulation.setUserAgentOverride', {
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+  }, sessionId);
+  await send('Emulation.setTouchEmulationEnabled', { enabled: true }, sessionId);
+}
+
+const loaded = once('Page.loadEventFired', sessionId);
+await send('Page.navigate', { url: `http://127.0.0.1:${PORT}/` }, sessionId);
+await loaded;
+// 姿态模型是异步加载的, 等它把遮罩换掉再截图
+await delay(4500);
+
+// ── 量布局 ──────────────────────────────────
+const METRICS = `(() => {
+  const box = (sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return null;
+    const r = el.getBoundingClientRect();
+    return { x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height) };
+  };
+  return {
+    innerW: window.innerWidth,
+    innerH: window.innerHeight,
+    docScrollW: document.documentElement.scrollWidth,
+    horizontalOverflow: document.documentElement.scrollWidth > window.innerWidth,
+    appShell: box('.app-shell'),
+    topbar: box('.topbar'),
+    topActions: box('.top-actions'),
+    gamePanel: box('.game-panel'),
+    canvas: box('#gameCanvas'),
+    cameraPanel: box('.camera-panel'),
+    cameraPosition: getComputedStyle(document.querySelector('.camera-panel')).position,
+    libraryPanel: box('.library-panel'),
+    leaderboard: box('.leaderboard-panel'),
+    reviewPanel: box('.review-panel'),
+    messagePanel: box('.message-panel'),
+    firstScreenBottom: window.innerHeight,
+    startBtn: box('#mainStartBtn'),
+  };
+})()`;
+
+const metricsResult = await send('Runtime.evaluate', { expression: METRICS, returnByValue: true }, sessionId);
+const metrics = metricsResult.result?.value;
+
+let extra = null;
+if (customEval) {
+  const r = await send('Runtime.evaluate', { expression: customEval, returnByValue: true }, sessionId);
+  extra = r.result?.value ?? r.result?.description ?? r.exceptionDetails?.text;
+}
+
+// 任意元素超出视口右边界 = 横向溢出/被裁切。
+// 但要排除"本来就在横向滚动容器里"的元素(例如手机端横向滚动的游戏库卡片),
+// 它们的祖先有 overflow-x: auto/scroll/hidden, 超出是预期行为。
+const OVERFLOW_PROBE = `(() => {
+  const inScrollContainer = (el) => {
+    let node = el.parentElement;
+    // 一路查到 body: body 上的 overflow-x: hidden 同样会让"超出视口"变成预期行为
+    while (node) {
+      const ox = getComputedStyle(node).overflowX;
+      if (ox === 'auto' || ox === 'scroll' || ox === 'hidden') return true;
+      node = node.parentElement;
+    }
+    return false;
+  };
+  const bad = [];
+  document.querySelectorAll('body *').forEach((el) => {
+    const r = el.getBoundingClientRect();
+    const out = r.width > 0 && (r.right > window.innerWidth + 1 || r.left < -1);
+    if (out && !inScrollContainer(el)) {
+      bad.push({
+        tag: el.tagName.toLowerCase(),
+        cls: (el.className && typeof el.className === 'string') ? el.className.slice(0, 60) : '',
+        left: Math.round(r.left), right: Math.round(r.right), width: Math.round(r.width),
+        position: getComputedStyle(el).position,
+      });
+    }
+  });
+  return bad.slice(0, 15);
+})()`;
+const overflowResult = await send('Runtime.evaluate', { expression: OVERFLOW_PROBE, returnByValue: true }, sessionId);
+const overflowing = overflowResult.result?.value || [];
+
+// ── 截图 ────────────────────────────────────
+fs.mkdirSync(outDir, { recursive: true });
+let clip;
+if (isFull) {
+  const heightResult = await send('Runtime.evaluate', {
+    expression: 'Math.min(document.documentElement.scrollHeight, 12000)',
+    returnByValue: true,
+  }, sessionId);
+  clip = { x: 0, y: 0, width: viewport.w, height: heightResult.result.value, scale: 1 };
+}
+const shot = await send('Page.captureScreenshot', {
+  format: 'png',
+  captureBeyondViewport: isFull,
+  ...(clip ? { clip } : {}),
+}, sessionId);
+
+const fileName = `${presetName}${isFull ? '-full' : ''}.png`;
+const outFile = path.join(outDir, fileName);
+fs.writeFileSync(outFile, Buffer.from(shot.data, 'base64'));
+
+await send('Target.closeTarget', { targetId });
+ws.close();
+child.kill();
+server.close();
+
+console.log(`${viewport.label} — ${viewport.w}x${viewport.h} @${viewport.dpr}x${viewport.mobile ? ' (移动端模拟)' : ''}`);
+console.log('布局:', JSON.stringify(metrics, null, 1));
+if (extra !== null && extra !== undefined) console.log('--eval 结果:', JSON.stringify(extra));
+console.log(`横向溢出元素 (${overflowing.length}):`, overflowing.length ? JSON.stringify(overflowing, null, 1) : '无');
+console.log(`截图 -> ${path.relative(root, outFile)} (${(fs.statSync(outFile).size / 1024).toFixed(1)} KB)`);
+process.exit(0);

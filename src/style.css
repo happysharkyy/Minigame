@@ -1131,9 +1131,24 @@ button:active { transform: translateY(1px); }
   .catalog-card { flex: 0 0 240px; width: auto; }
   .library-intro, .library-note { display: none; }
 
-  .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 9px; }
+  .stat-card { padding: 7px 6px; }
+  .stat-card span { margin-bottom: 2px; font-size: .58rem; }
+  .stat-card strong { font-size: .95rem; }
+  .action-stat strong { font-size: .6rem; padding-top: 1px; }
+  .game-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 9px; }
   .stage-rail { display: none; }
   .game-header { flex-direction: column; }
+
+  /* 手机上要让"棋盘 + 分数 + 按钮"同屏。
+     原来游戏面板在 390x844 上高 1001px, 比整屏还高 —— 打起来根本看不到自己的分数,
+     而分数正是"再来一局"的动力来源。做法: 压缩头部(副标题在手机上去掉, 动作提示
+     本来就会在棋盘遮罩里再讲一遍)、分数压成一行、按钮压成一行, 剩下的高度全给棋盘。 */
+  .game-panel { padding: 12px; }
+  .game-header { gap: 8px; margin-bottom: 9px; }
+  .game-header > div { padding-right: 126px; } /* 别让标题钻到右上角摄像头小窗下面 */
+  .game-header p { display: none; }
+  .game-stage-wrap { width: min(100%, 30vh, 360px); width: min(100%, 30dvh, 360px); }
 
   /* 可点目标 ≥44px */
   .icon-btn, .primary-btn, .secondary-btn, .square-btn { min-height: 44px; }
@@ -1170,10 +1185,8 @@ button:active { transform: translateY(1px); }
   .top-actions { gap: 4px; }
   .brand { gap: 8px; }
   .brand-mark { width: 34px; height: 34px; }
-  .brand strong { font-size: .85rem; letter-spacing: .1em; }
+  .brand-name { font-size: .85rem; letter-spacing: .1em; }
   .brand small { display: none; }
-  .game-actions { display: grid; grid-template-columns: 1fr 1fr; }
-  .game-actions .primary-btn { grid-column: 1 / -1; }
 }
 
 /* 窄屏:教练列退回单列,顺序固定 本局动作→舒适度 */
@@ -1224,4 +1237,6 @@ button:active { transform: translateY(1px); }
   .catalog-grid { display: flex; gap: 10px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .catalog-card { flex: 0 0 200px; width: auto; }
   .game-stage-wrap { width: auto; max-width: 100%; height: calc(100vh - 130px); height: calc(100dvh - 130px); min-height: 0; }
+  /* 横屏时摄像头回到右列, 不再有浮层需要避让 */
+  .game-header > div { padding-right: 0; }
 }
