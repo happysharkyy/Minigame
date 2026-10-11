@@ -251,6 +251,13 @@ const metricOneValue = document.querySelector('#metricOneValue');
 const metricTwoLabel = document.querySelector('#metricTwoLabel');
 const metricTwoValue = document.querySelector('#metricTwoValue');
 const restartBtn = document.querySelector('#restartBtn');
+const mainStartBtn = document.querySelector('#mainStartBtn');
+const pauseBtn = document.querySelector('#pauseBtn');
+const overlayStartBtn = document.querySelector('#startActionBtn');
+const helpBtn = document.querySelector('#helpBtn');
+const helpDialog = document.querySelector('#helpDialog');
+const closeHelpBtn = document.querySelector('#closeHelpBtn');
+const helpDoneBtn = document.querySelector('#helpDoneBtn');
 const overlay = document.querySelector('#gameOverlay');
 const overlayTitle = document.querySelector('#overlayTitle');
 const overlayHint = document.querySelector('#overlayHint');
@@ -277,6 +284,19 @@ let lastCameraStatus = { key: null, params: null };
 let startupFailure = null;
 let overlayVisible = false;
 let modelLoading = false;
+
+// ── 暂停 ────────────────────────────────────
+// 暂停不重建游戏状态, 而是让游戏时间"停表": 主循环统一使用 now() (= rAF 时间戳 - 累计暂停时长),
+// 恢复时把暂停时长累加进 pausedTotalMs, 所有基于绝对时间的判定(下落/倒计时/冷却)自动顺延。
+let paused = false;
+let pausedAt = 0;
+let pausedTotalMs = 0;
+
+const HELP_SEEN_KEY = 'move-arcade-help-seen';
+
+function now() {
+  return performance.now() - pausedTotalMs;
+}
 
 function setCameraStatus(key, params) {
   lastCameraStatus = { key, params };
@@ -319,6 +339,16 @@ function initCameraDock() {
 function updateLangButton() {
   if (!langBtn) return;
   langBtn.textContent = getLang() === 'zh' ? 'EN' : '中文';
+}
+
+// 首次访问时给"新手帮助"一个柔和的提示光, 打开过一次就不再提示
+function markHelpHint() {
+  if (!helpBtn) return;
+  try {
+    if (!localStorage.getItem(HELP_SEEN_KEY)) helpBtn.classList.add('attention');
+  } catch (err) {
+    /* 隐私模式 */
+  }
 }
 
 let poseLandmarker;
@@ -574,7 +604,7 @@ function resetTetrisGame() {
   tetrisState.lines = 0;
   tetrisState.level = 1;
   tetrisState.dropInterval = DROP_BASE;
-  tetrisState.lastDropAt = performance.now();
+  tetrisState.lastDropAt = now();
   tetrisState.running = false;
   tetrisState.gameOver = false;
   tetrisState.softDrop = false;
@@ -594,7 +624,7 @@ function startTetrisGame() {
   }
   tetrisState.running = true;
   tetrisState.gameOver = false;
-  tetrisState.lastDropAt = performance.now();
+  tetrisState.lastDropAt = now();
   updateGameOverlay(false);
   gameStateBadge.textContent = t('game.state.playing');
 }
@@ -670,8 +700,8 @@ function resetFruitGame() {
   fruitState.lastSliceAt = 0;
   fruitState.timeLeftMs = FRUIT_ROUND_DURATION;
   fruitState.roundEndsAt = 0;
-  fruitState.nextSpawnAt = performance.now() + 480;
-  fruitState.lastTick = performance.now();
+  fruitState.nextSpawnAt = now() + 480;
+  fruitState.lastTick = now();
   fruitState.running = false;
   fruitState.gameOver = false;
   updateHud();
@@ -686,14 +716,14 @@ function startFruitGame() {
   if (fruitState.gameOver) {
     resetFruitGame();
   }
-  const now = performance.now();
+  const startedAt = now();
   fruitState.running = true;
   fruitState.gameOver = false;
-  fruitState.lastTick = now;
+  fruitState.lastTick = startedAt;
   fruitState.lastSliceAt = 0;
   fruitState.timeLeftMs = FRUIT_ROUND_DURATION;
-  fruitState.roundEndsAt = now + FRUIT_ROUND_DURATION;
-  fruitState.nextSpawnAt = now + 420;
+  fruitState.roundEndsAt = startedAt + FRUIT_ROUND_DURATION;
+  fruitState.nextSpawnAt = startedAt + 420;
   fruitState.targets = [];
   fruitState.particles = [];
   fruitState.slashes = [];
@@ -1414,6 +1444,66 @@ function updateGameOverlay(show, title = overlayTitle.textContent, hint = overla
   overlay.classList.toggle('hidden', !show);
   overlayTitle.textContent = title;
   overlayHint.textContent = hint;
+  syncOverlayButton();
+}
+
+// 结算/暂停/进行中, 按钮文案与可用状态都跟着走, 让"下一步该点哪"永远只有一个答案
+function syncOverlayButton() {
+  const running = isCurrentGameRunning() && !isCurrentGameOver();
+  const over = isCurrentGameOver();
+
+  if (overlayStartBtn) {
+    if (paused) overlayStartBtn.textContent = t('controls.resume');
+    else if (over) overlayStartBtn.textContent = t('overlay.replay');
+    else overlayStartBtn.textContent = t('overlay.startAction');
+  }
+
+  if (mainStartBtn) {
+    if (paused) mainStartBtn.textContent = t('controls.resume');
+    else if (over) mainStartBtn.textContent = t('overlay.replay');
+    else if (running) mainStartBtn.textContent = t('controls.playing');
+    else mainStartBtn.textContent = t('controls.start');
+    // 进行中且未暂停时, "开始"没有意义, 直接禁用避免空点
+    mainStartBtn.disabled = running && !paused;
+  }
+
+  if (pauseBtn) {
+    pauseBtn.textContent = paused ? t('controls.resume') : t('controls.pause');
+    pauseBtn.disabled = !running && !paused;
+  }
+}
+
+function setPaused(value) {
+  if (value === paused) return;
+  if (value) {
+    if (!isCurrentGameRunning() || isCurrentGameOver()) return;
+    pausedAt = performance.now();
+    paused = true;
+    gameStateBadge.textContent = t('game.state.paused');
+    if (pauseBtn) pauseBtn.textContent = t('controls.resume');
+    updateGameOverlay(true, t('overlay.paused'), t('overlay.pausedHint'));
+  } else {
+    pausedTotalMs += performance.now() - pausedAt;
+    paused = false;
+    gameStateBadge.textContent = currentGame === GAME_MODES.TETRIS
+      ? t('game.state.playing')
+      : t('game.state.timer');
+    if (pauseBtn) pauseBtn.textContent = t('controls.pause');
+    updateGameOverlay(false);
+  }
+  syncOverlayButton();
+}
+
+// 主按钮统一入口: 暂停中 → 继续; 已结束 → 直接再来一局; 否则开始
+function primaryAction() {
+  if (paused) {
+    setPaused(false);
+    return;
+  }
+  if (isCurrentGameOver()) {
+    resetCurrentGame();
+  }
+  startCurrentGame();
 }
 
 function updateHud() {
@@ -1498,6 +1588,8 @@ function applyGameMeta() {
 
 
 function resetCurrentGame() {
+  // 先恢复时钟, 否则暂停中重置会让新一局一直卡在停表状态
+  if (paused) setPaused(false);
   startPoseSince = 0;
   if (currentGame === GAME_MODES.TETRIS) {
     resetTetrisGame();
@@ -1979,9 +2071,12 @@ function detectPose(now) {
       setCameraStatus('camera.status.noBody');
     }
 
-    updateHandTracking(latestLandmarks, now);
+    // 暂停时仍然识别并绘制骨架(让玩家看得见自己), 但不让动作驱动游戏状态
+    if (!paused) {
+      updateHandTracking(latestLandmarks, now);
+      evaluateGestures(latestLandmarks, now);
+    }
     drawPose(latestLandmarks);
-    evaluateGestures(latestLandmarks, now);
   }
 }
 
@@ -1997,6 +2092,8 @@ function setLanguage(lang) {
 
   if (startupFailure) {
     gameStateBadge.textContent = t('game.state.unavailable');
+  } else if (paused) {
+    gameStateBadge.textContent = t('game.state.paused');
   } else if (state.gameOver) {
     gameStateBadge.textContent = t('game.state.over');
   } else if (state.running) {
@@ -2004,6 +2101,9 @@ function setLanguage(lang) {
   } else {
     gameStateBadge.textContent = t('game.state.ready');
   }
+
+  if (paused) updateGameOverlay(true, t('overlay.paused'), t('overlay.pausedHint'));
+  syncOverlayButton();
 
   if (lastCameraStatus.key) {
     setCameraStatus(lastCameraStatus.key, lastCameraStatus.params);
@@ -2055,6 +2155,42 @@ function setupEvents() {
   restartBtn.addEventListener('click', () => {
     resetHandTracking();
     resetCurrentGame();
+    startCurrentGame();
+  });
+
+  // 页面上的主按钮过去完全没有绑定, 点了没有任何反应 —— 这里是首次可用的入口
+  mainStartBtn?.addEventListener('click', primaryAction);
+  overlayStartBtn?.addEventListener('click', primaryAction);
+
+  pauseBtn?.addEventListener('click', () => {
+    if (!isCurrentGameRunning() || isCurrentGameOver()) return;
+    setPaused(!paused);
+  });
+
+  // ── 新手帮助弹窗 ──────────────────────────
+  const openHelp = () => {
+    if (!helpDialog) return;
+    helpBtn?.classList.remove('attention');
+    try {
+      localStorage.setItem(HELP_SEEN_KEY, '1');
+    } catch (err) {
+      /* 隐私模式 */
+    }
+    if (typeof helpDialog.showModal === 'function') helpDialog.showModal();
+    else helpDialog.setAttribute('open', '');
+  };
+  const closeHelp = () => {
+    if (!helpDialog) return;
+    if (typeof helpDialog.close === 'function') helpDialog.close();
+    else helpDialog.removeAttribute('open');
+  };
+
+  helpBtn?.addEventListener('click', openHelp);
+  closeHelpBtn?.addEventListener('click', closeHelp);
+  helpDoneBtn?.addEventListener('click', closeHelp);
+  // 点遮罩空白处也关闭
+  helpDialog?.addEventListener('click', (event) => {
+    if (event.target === helpDialog) closeHelp();
   });
 
   langBtn?.addEventListener('click', () => {
@@ -2079,9 +2215,24 @@ function setupEvents() {
     }
 
     if (event.code === 'Enter') {
+      primaryAction();
+      return;
+    }
+
+    if (event.code === 'KeyP') {
+      if (isCurrentGameRunning() && !isCurrentGameOver()) setPaused(!paused);
+      return;
+    }
+
+    if (event.code === 'KeyR') {
+      resetHandTracking();
+      resetCurrentGame();
       startCurrentGame();
       return;
     }
+
+    // 暂停/弹窗打开时不响应游戏内按键
+    if (paused || helpDialog?.open) return;
 
     if (currentGame !== GAME_MODES.TETRIS) return;
 
@@ -2112,9 +2263,13 @@ function setupEvents() {
 }
 
 function gameLoop(timestamp) {
-  frameStartedAt = timestamp;
-  detectPose(timestamp);
-  updateCurrentGame(timestamp);
+  // 用"减去累计暂停时长"的时钟驱动游戏, 暂停即停表, 恢复不需要逐个修正各状态的绝对时间
+  const t = timestamp - pausedTotalMs;
+  frameStartedAt = t;
+  detectPose(t);
+  if (!paused) {
+    updateCurrentGame(t);
+  }
   drawCurrentGame();
   requestAnimationFrame(gameLoop);
 }
@@ -2122,6 +2277,7 @@ function gameLoop(timestamp) {
 async function bootstrap() {
   initLanguage();
   updateLangButton();
+  markHelpHint();
   initMessageBoard();
   initLeaderboard();
   initReviewBoard();

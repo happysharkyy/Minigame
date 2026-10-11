@@ -45,6 +45,18 @@ body.reduce-motion *, body.reduce-motion *::before, body.reduce-motion *::after 
 button, input, select { font: inherit; }
 button, select { color: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
+
+/* 首次访问时提示"新手帮助"可点 */
+.icon-btn.attention {
+  border-color: var(--line-strong);
+  color: var(--mint);
+  animation: help-pulse 2.6s ease-in-out infinite;
+}
+
+@keyframes help-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(139, 245, 220, .26); }
+  50% { box-shadow: 0 0 0 7px rgba(139, 245, 220, 0); }
+}
 h1, h2, h3, p { margin: 0; }
 
 .sr-only {

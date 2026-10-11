@@ -69,6 +69,7 @@ const I18N = {
     'game.state.playing': '游戏中',
     'game.state.timer': '计时中',
     'game.state.over': '已结束',
+    'game.state.paused': '已暂停',
     'game.state.unavailable': '不可用',
     'game.currentMode': '当前模式：',
 
@@ -78,6 +79,9 @@ const I18N = {
     'overlay.timeUp': '时间到',
     'overlay.restartBackHint': '双手高举重新开始，或者切换回俄罗斯方块。',
     'overlay.startAction': '不用手势，直接开始',
+    'overlay.replay': '再来一局',
+    'overlay.paused': '已暂停',
+    'overlay.pausedHint': '动作识别和计时都已冻结，点“继续”接着玩。',
     'overlay.toastWait': '等待动作',
     'overlay.cameraStartFail': '无法启动摄像头',
     'overlay.modelStartFail': '摄像头已连接，但姿态模型启动失败',
@@ -149,7 +153,9 @@ const I18N = {
 
     // 操作按钮
     'controls.start': '开始游戏',
+    'controls.playing': '游戏中…',
     'controls.pause': '暂停',
+    'controls.resume': '继续',
     'controls.restart': '重新开始',
     'controls.keyboardTip': '键盘备用：Enter 开始 · P 暂停 · 1–4 切换游戏',
 
@@ -402,6 +408,7 @@ const I18N = {
     'game.state.playing': 'Playing',
     'game.state.timer': 'In play',
     'game.state.over': 'Game over',
+    'game.state.paused': 'Paused',
     'game.state.unavailable': 'Unavailable',
     'game.currentMode': 'Current: ',
 
@@ -411,6 +418,9 @@ const I18N = {
     'overlay.timeUp': "Time's up",
     'overlay.restartBackHint': 'Raise both hands to restart, or switch back to Block Drop.',
     'overlay.startAction': 'Start without gestures',
+    'overlay.replay': 'Play again',
+    'overlay.paused': 'Paused',
+    'overlay.pausedHint': 'Tracking and the timer are frozen. Tap Resume to continue.',
     'overlay.toastWait': 'Waiting for your move',
     'overlay.cameraStartFail': 'Could not start camera',
     'overlay.modelStartFail': 'Camera is connected, but the pose model failed to start',
@@ -482,7 +492,9 @@ const I18N = {
 
     // Action buttons
     'controls.start': 'Start game',
+    'controls.playing': 'Playing…',
     'controls.pause': 'Pause',
+    'controls.resume': 'Resume',
     'controls.restart': 'Restart',
     'controls.keyboardTip': 'Keyboard: Enter start · P pause · 1–4 switch games',
 
