@@ -78,13 +78,18 @@ function dumpDom(browser, url, budgetMs) {
       // 无摄像头环境: 用假设备避免权限弹窗卡住
       '--use-fake-device-for-media-stream',
       '--use-fake-ui-for-media-stream',
+      // 把页面控制台输出重定向到 stderr, 用来抓"未捕获异常"
+      '--enable-logging=stderr',
+      '--v=0',
       '--dump-dom',
       url,
     ]);
     let out = '';
+    let err = '';
     child.stdout.on('data', (chunk) => { out += chunk; });
+    child.stderr.on('data', (chunk) => { err += chunk; });
     child.on('error', reject);
-    child.on('close', () => resolve(out));
+    child.on('close', () => resolve({ dom: out, log: err }));
   });
 }
 
@@ -124,6 +129,17 @@ const CHECKS = [
     test: (dom) => /id="soundBtn"[^>]*aria-pressed="(true|false)"/.test(dom.replace(/\s+/g, ' ')),
     detail: 'soundBtn 没有 aria-pressed, 说明 syncSoundButton 没跑',
   },
+  {
+    name: '舒适度设置已生效(动作幅度/减少动态效果)',
+    test: (dom) => /data-motion-range="(gentle|standard|active)"/.test(dom)
+      && /data-reduced-motion="(true|false)"/.test(dom),
+    detail: 'body 上没有 data-motion-range / data-reduced-motion, 说明 loadComfort 没跑',
+  },
+  {
+    name: '游戏库排序方式已生效',
+    test: (dom) => /id="gameCatalog"[^>]*data-sort-mode="/.test(dom.replace(/\s+/g, ' ')),
+    detail: 'gameCatalog 上没有 data-sort-mode, 说明排序状态没接上',
+  },
 ];
 
 const browser = findBrowser();
@@ -141,8 +157,11 @@ console.log(`静态服务器: http://127.0.0.1:${PORT}`);
 console.log(`浏览器: ${path.basename(browser)}`);
 
 let dom = '';
+let browserLog = '';
 try {
-  dom = await dumpDom(browser, `http://127.0.0.1:${PORT}/`, 6000);
+  const result = await dumpDom(browser, `http://127.0.0.1:${PORT}/`, 6000);
+  dom = result.dom;
+  browserLog = result.log;
 } finally {
   server.close();
 }
@@ -161,5 +180,24 @@ for (const check of CHECKS) {
     failed += 1;
   }
 }
+
+// 未捕获异常: DOM 断言可能漏掉"渲染完了但中途抛错"的情况, 这里补一道
+const errors = browserLog
+  .split('\n')
+  .filter((line) => /Uncaught|ERROR:CONSOLE|SyntaxError|TypeError/i.test(line))
+  .map((line) => line.trim())
+  .filter(Boolean);
+const logLines = browserLog.split('\n').filter(Boolean).length;
+
+if (errors.length > 0) {
+  console.error(`✗ 页面控制台出现 ${errors.length} 条错误(共 ${logLines} 行日志):`);
+  errors.slice(0, 8).forEach((line) => console.error(`    ${line.slice(0, 200)}`));
+  failed += 1;
+} else if (logLines > 0) {
+  console.log(`✓ 没有未捕获异常(共 ${logLines} 行浏览器日志)`);
+} else {
+  console.log('(浏览器未输出日志, 跳过异常检查)');
+}
+
 console.log(failed === 0 ? '\n全部通过' : `\n${failed} 项失败`);
 process.exit(failed === 0 ? 0 : 1);

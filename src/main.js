@@ -238,6 +238,167 @@ function getLocalizedLibrary() {
   }));
 }
 
+// ── 游戏库排序: 我的顺序 / 智能推荐 / 最近玩过 ────────────────
+const SORT_MODES = ['custom', 'smart', 'recent'];
+
+let sortMode = 'custom';
+let customOrder = []; // 「换一换」或后续的拖动排序写入的顺序
+let gameUsage = {}; // { [id]: { count, lastPlayedAt } }
+
+function readStoredJson(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    return parsed ?? fallback;
+  } catch (err) {
+    return fallback;
+  }
+}
+
+function writeStoredJson(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (err) {
+    /* 隐私模式 */
+  }
+}
+
+function loadLibraryPrefs() {
+  const saved = readStoredJson(GAME_ORDER_KEY, null);
+  if (saved && SORT_MODES.includes(saved.mode)) sortMode = saved.mode;
+  if (saved && Array.isArray(saved.order)) {
+    customOrder = saved.order.filter((id) => typeof id === 'string');
+  }
+  const usage = readStoredJson(GAME_USAGE_KEY, null);
+  if (usage && typeof usage === 'object' && !Array.isArray(usage)) gameUsage = usage;
+}
+
+function saveLibraryPrefs() {
+  writeStoredJson(GAME_ORDER_KEY, { mode: sortMode, order: customOrder });
+}
+
+// 每开一局记一次, 供「最近玩过」和「智能推荐」使用
+function recordGameUsage(mode) {
+  const previous = gameUsage[mode] || { count: 0, lastPlayedAt: 0 };
+  gameUsage[mode] = { count: previous.count + 1, lastPlayedAt: Date.now() };
+  writeStoredJson(GAME_USAGE_KEY, gameUsage);
+}
+
+// 智能推荐: 越"很久没玩过"排越前, 越"最近反复玩"排越后 —— 目的是把玩家推去换口味
+function recommendationScore(item) {
+  const usage = gameUsage[item.id];
+  if (!usage) return -1;
+  const hoursSince = (Date.now() - (usage.lastPlayedAt || 0)) / 3_600_000;
+  return (usage.count || 0) * 2 - hoursSince * 0.35;
+}
+
+function compareByCustomOrder(a, b) {
+  const indexA = customOrder.indexOf(a.id);
+  const indexB = customOrder.indexOf(b.id);
+  if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+  if (indexA !== -1) return -1;
+  if (indexB !== -1) return 1;
+  return b.priority - a.priority; // 没有自定义顺序时按内置优先级
+}
+
+// 关键约束: 可玩的永远排在"开发中"前面。
+// 否则「换一换」或排序可能把空壳卡片顶到最上面, 又变回"点进去发现不对"的老问题。
+function sortedLibrary() {
+  const items = getLocalizedLibrary();
+  const playable = items.filter((item) => item.mode);
+  const coming = items.filter((item) => !item.mode);
+
+  if (sortMode === 'recent') {
+    playable.sort((a, b) => (
+      (gameUsage[b.id]?.lastPlayedAt || 0) - (gameUsage[a.id]?.lastPlayedAt || 0)
+    ));
+  } else if (sortMode === 'smart') {
+    playable.sort((a, b) => recommendationScore(a) - recommendationScore(b));
+  } else {
+    playable.sort(compareByCustomOrder);
+  }
+
+  return [...playable, ...coming];
+}
+
+function setSortMode(mode) {
+  if (!SORT_MODES.includes(mode) || mode === sortMode) return;
+  sortMode = mode;
+  saveLibraryPrefs();
+  renderGameCatalog();
+  playSfx('ui');
+}
+
+function shuffleLibrary() {
+  const ids = getLocalizedLibrary().filter((item) => item.mode).map((item) => item.id);
+  for (let i = ids.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ids[i], ids[j]] = [ids[j], ids[i]];
+  }
+  customOrder = ids;
+  sortMode = 'custom';
+  if (sortGames) sortGames.value = 'custom';
+  saveLibraryPrefs();
+  renderGameCatalog();
+  playSfx('ui');
+}
+
+// ── 操作舒适度: 动作幅度 / 减少动态效果 ──────────────────────
+const RANGE_SCALE = { gentle: 0.65, standard: 1, active: 1.5 };
+
+let comfortRange = 'standard';
+let motionScale = RANGE_SCALE.standard;
+let reducedMotion = false;
+
+// 所有手势阈值都乘这个系数: 轻柔=小幅度就能触发, 活力=需要更明显的动作
+function scaled(threshold) {
+  return threshold * motionScale;
+}
+
+function applyComfort() {
+  motionScale = RANGE_SCALE[comfortRange] || 1;
+  document.body.classList.toggle('reduce-motion', reducedMotion);
+  // 把当前档位写到 body 上: 既是 CSS 钩子, 也方便在 DevTools / 冒烟测试里直接看到实际生效值
+  document.body.dataset.motionRange = comfortRange;
+  document.body.dataset.reducedMotion = String(reducedMotion);
+
+  if (motionRangeControl) {
+    motionRangeControl.querySelectorAll('[data-range]').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.range === comfortRange);
+    });
+  }
+  if (reducedMotionToggle) reducedMotionToggle.checked = reducedMotion;
+}
+
+function saveComfort() {
+  writeStoredJson(COMFORT_KEY, { range: comfortRange, reducedMotion });
+}
+
+function loadComfort() {
+  const saved = readStoredJson(COMFORT_KEY, {});
+  if (saved && RANGE_SCALE[saved.range]) comfortRange = saved.range;
+  // 没存过就跟随系统的"减少动态效果"设置
+  reducedMotion = typeof saved?.reducedMotion === 'boolean'
+    ? saved.reducedMotion
+    : window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  applyComfort();
+}
+
+function setComfortRange(range) {
+  if (!RANGE_SCALE[range] || range === comfortRange) return;
+  comfortRange = range;
+  applyComfort();
+  saveComfort();
+  playSfx('ui');
+}
+
+function setReducedMotion(value) {
+  reducedMotion = Boolean(value);
+  applyComfort();
+  saveComfort();
+}
+
 const video = document.querySelector('#camera');
 const poseCanvas = document.querySelector('#poseCanvas');
 const poseCtx = poseCanvas.getContext('2d');
@@ -261,6 +422,10 @@ const helpDialog = document.querySelector('#helpDialog');
 const closeHelpBtn = document.querySelector('#closeHelpBtn');
 const helpDoneBtn = document.querySelector('#helpDoneBtn');
 const soundBtn = document.querySelector('#soundBtn');
+const sortGames = document.querySelector('#sortGames');
+const shuffleGamesBtn = document.querySelector('#shuffleGamesBtn');
+const motionRangeControl = document.querySelector('#motionRangeControl');
+const reducedMotionToggle = document.querySelector('#reducedMotionToggle');
 const overlay = document.querySelector('#gameOverlay');
 const overlayTitle = document.querySelector('#overlayTitle');
 const overlayHint = document.querySelector('#overlayHint');
@@ -1549,8 +1714,10 @@ function updateHud() {
 function renderGameCatalog() {
   if (!gameCatalog) return;
   gameCatalog.replaceChildren();
+  // 记录实际生效的排序方式, 方便排查"为什么顺序和我选的不一样"
+  gameCatalog.dataset.sortMode = sortMode;
 
-  getLocalizedLibrary().forEach((item) => {
+  sortedLibrary().forEach((item) => {
     const card = document.createElement(item.mode ? 'button' : 'article');
     card.className = `catalog-card${item.mode ? '' : ' coming'}${item.mode === currentGame ? ' active' : ''}`;
     if (item.mode) {
@@ -1623,6 +1790,8 @@ function resetCurrentGame() {
 }
 
 function startCurrentGame() {
+  // 记一次"玩过", 供「最近玩过」和「智能推荐」使用
+  recordGameUsage(currentGame);
   if (currentGame === GAME_MODES.TETRIS) {
     startTetrisGame();
   } else {
@@ -1692,8 +1861,8 @@ function getStartGestureState(landmarks) {
   const leftReferenceY = getJointY(leftShoulder, shoulderLine);
   const rightReferenceY = getJointY(rightShoulder, shoulderLine);
 
-  const leftRaised = leftWristVisible && leftReferenceY !== null && leftWrist.y < leftReferenceY - START_WRIST_MARGIN;
-  const rightRaised = rightWristVisible && rightReferenceY !== null && rightWrist.y < rightReferenceY - START_WRIST_MARGIN;
+  const leftRaised = leftWristVisible && leftReferenceY !== null && leftWrist.y < leftReferenceY - scaled(START_WRIST_MARGIN);
+  const rightRaised = rightWristVisible && rightReferenceY !== null && rightWrist.y < rightReferenceY - scaled(START_WRIST_MARGIN);
 
   let hint = t('gesture.hint.default');
   if (!visibleShoulders.length) {
@@ -1857,22 +2026,22 @@ function evaluateTetrisGestures(landmarks, now) {
   const leftHipY = getJointY(leftHip, hipLine);
   const rightHipY = getJointY(rightHip, hipLine);
 
-  const leftRaised = isGestureVisible(leftWrist) && leftShoulderY !== null && leftWrist.y < leftShoulderY - ACTION_WRIST_MARGIN;
-  const rightRaised = isGestureVisible(rightWrist) && rightShoulderY !== null && rightWrist.y < rightShoulderY - ACTION_WRIST_MARGIN;
+  const leftRaised = isGestureVisible(leftWrist) && leftShoulderY !== null && leftWrist.y < leftShoulderY - scaled(ACTION_WRIST_MARGIN);
+  const rightRaised = isGestureVisible(rightWrist) && rightShoulderY !== null && rightWrist.y < rightShoulderY - scaled(ACTION_WRIST_MARGIN);
   const leftDownEnough =
     isGestureVisible(leftWrist) &&
     shoulderLine !== null &&
-    leftWrist.y > shoulderLine + HANDS_DOWN_SHOULDER_OFFSET &&
-    ((leftElbowY !== null && leftWrist.y > leftElbowY + HANDS_DOWN_ELBOW_MARGIN) ||
-      (torsoMidLine !== null && leftWrist.y > torsoMidLine - HANDS_DOWN_MARGIN) ||
-      (leftHipY !== null && leftWrist.y > leftHipY - HANDS_DOWN_MARGIN));
+    leftWrist.y > shoulderLine + scaled(HANDS_DOWN_SHOULDER_OFFSET) &&
+    ((leftElbowY !== null && leftWrist.y > leftElbowY + scaled(HANDS_DOWN_ELBOW_MARGIN)) ||
+      (torsoMidLine !== null && leftWrist.y > torsoMidLine - scaled(HANDS_DOWN_MARGIN)) ||
+      (leftHipY !== null && leftWrist.y > leftHipY - scaled(HANDS_DOWN_MARGIN)));
   const rightDownEnough =
     isGestureVisible(rightWrist) &&
     shoulderLine !== null &&
-    rightWrist.y > shoulderLine + HANDS_DOWN_SHOULDER_OFFSET &&
-    ((rightElbowY !== null && rightWrist.y > rightElbowY + HANDS_DOWN_ELBOW_MARGIN) ||
-      (torsoMidLine !== null && rightWrist.y > torsoMidLine - HANDS_DOWN_MARGIN) ||
-      (rightHipY !== null && rightWrist.y > rightHipY - HANDS_DOWN_MARGIN));
+    rightWrist.y > shoulderLine + scaled(HANDS_DOWN_SHOULDER_OFFSET) &&
+    ((rightElbowY !== null && rightWrist.y > rightElbowY + scaled(HANDS_DOWN_ELBOW_MARGIN)) ||
+      (torsoMidLine !== null && rightWrist.y > torsoMidLine - scaled(HANDS_DOWN_MARGIN)) ||
+      (rightHipY !== null && rightWrist.y > rightHipY - scaled(HANDS_DOWN_MARGIN)));
 
   let currentGesture = t('gesture.idle');
 
@@ -2217,6 +2386,19 @@ function setupEvents() {
     setSfxEnabled(!sfxEnabled());
     syncSoundButton();
   });
+
+  // ── 游戏库排序 ────────────────────────────
+  sortGames?.addEventListener('change', () => setSortMode(sortGames.value));
+  shuffleGamesBtn?.addEventListener('click', shuffleLibrary);
+
+  // ── 操作舒适度 ────────────────────────────
+  motionRangeControl?.addEventListener('click', (event) => {
+    const target = event.target.closest('[data-range]');
+    if (target) setComfortRange(target.dataset.range);
+  });
+  reducedMotionToggle?.addEventListener('change', () => {
+    setReducedMotion(reducedMotionToggle.checked);
+  });
   // 点遮罩空白处也关闭
   helpDialog?.addEventListener('click', (event) => {
     if (event.target === helpDialog) closeHelp();
@@ -2309,6 +2491,9 @@ async function bootstrap() {
   markHelpHint();
   initSfx();
   syncSoundButton();
+  loadComfort();
+  loadLibraryPrefs();
+  if (sortGames) sortGames.value = sortMode;
   initMessageBoard();
   initLeaderboard();
   initReviewBoard();
