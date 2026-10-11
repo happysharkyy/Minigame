@@ -3,6 +3,7 @@ import { getLang, initLanguage, setLang, t, tf } from './i18n.js';
 import { initMessageBoard, refreshMessageBoard } from './messageBoard.js';
 import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from './leaderboard.js';
 import { initReviewBoard, refreshReviewBoard, setReviewGame } from './reviewBoard.js';
+import { initSfx, isEnabled as sfxEnabled, play as playSfx, setEnabled as setSfxEnabled } from './sfx.js';
 
 const GAME_MODES = {
   TETRIS: 'tetris',
@@ -100,21 +101,22 @@ const GAME_LIBRARY = [
     priority: 100,
   },
   {
+    // 尚未实现: 没有 mode 就会渲染成不可点的"开发中"卡片。
+    // 之前这两项带着 mode, 点进去实际跑的是切西瓜的代码, 属于骗点击, 已改回诚实状态。
     id: GAME_MODES.STAR,
     titleKey: 'lib.star.title',
     badgeKey: 'lib.star.badge',
     descKey: 'lib.star.desc',
     taglineKey: 'lib.star.tagline',
-    mode: GAME_MODES.STAR,
     priority: 80,
   },
   {
+    // 尚未实现, 同上
     id: GAME_MODES.GUARD,
     titleKey: 'lib.guard.title',
     badgeKey: 'lib.guard.badge',
     descKey: 'lib.guard.desc',
     taglineKey: 'lib.guard.tagline',
-    mode: GAME_MODES.GUARD,
     priority: 92,
   },
   {
@@ -258,6 +260,7 @@ const helpBtn = document.querySelector('#helpBtn');
 const helpDialog = document.querySelector('#helpDialog');
 const closeHelpBtn = document.querySelector('#closeHelpBtn');
 const helpDoneBtn = document.querySelector('#helpDoneBtn');
+const soundBtn = document.querySelector('#soundBtn');
 const overlay = document.querySelector('#gameOverlay');
 const overlayTitle = document.querySelector('#overlayTitle');
 const overlayHint = document.querySelector('#overlayHint');
@@ -349,6 +352,14 @@ function markHelpHint() {
   } catch (err) {
     /* 隐私模式 */
   }
+}
+
+// 声音开关: 文案由 JS 维护(因为 applyStaticTranslations 只会写成"声音 开")
+function syncSoundButton() {
+  if (!soundBtn) return;
+  const on = sfxEnabled();
+  soundBtn.textContent = t(on ? 'sound.on' : 'sound.off');
+  soundBtn.setAttribute('aria-pressed', String(on));
 }
 
 let poseLandmarker;
@@ -518,6 +529,7 @@ function spawnPiece() {
     tetrisState.gameOver = true;
     updateGameOverlay(true, t('overlay.gameOver'), t('overlay.restartHintFruit'));
     gameStateBadge.textContent = t('game.state.over');
+    playSfx('gameover');
     submitScore(currentGame, tetrisState.score);
   }
 }
@@ -553,12 +565,16 @@ function clearLines() {
   tetrisState.score += scoreMap[cleared] * tetrisState.level;
   tetrisState.level = Math.floor(tetrisState.lines / 8) + 1;
   tetrisState.dropInterval = Math.max(220, DROP_BASE - (tetrisState.level - 1) * 85);
+  playSfx('clear', cleared);
   updateHud();
 }
 
 function lockPiece() {
   mergeActivePiece();
+  // 只有没消行时才播放落地音, 否则会和消除音叠在一起
+  const linesBefore = tetrisState.lines;
   clearLines();
+  if (tetrisState.lines === linesBefore) playSfx('lock');
   spawnPiece();
 }
 
@@ -567,6 +583,7 @@ function tryMove(deltaX) {
   const nextX = tetrisState.active.x + deltaX;
   if (!collides(tetrisState.active.matrix, nextX, tetrisState.active.y)) {
     tetrisState.active.x = nextX;
+    playSfx('move');
     return true;
   }
   return false;
@@ -580,6 +597,7 @@ function tryRotate() {
     if (!collides(rotated, tetrisState.active.x + offset, tetrisState.active.y)) {
       tetrisState.active.matrix = rotated;
       tetrisState.active.x += offset;
+      playSfx('rotate');
       return true;
     }
   }
@@ -627,6 +645,7 @@ function startTetrisGame() {
   tetrisState.lastDropAt = now();
   updateGameOverlay(false);
   gameStateBadge.textContent = t('game.state.playing');
+  playSfx('start');
 }
 
 function updateTetris(timestamp) {
@@ -733,6 +752,7 @@ function startFruitGame() {
   updateHud();
   updateGameOverlay(false);
   gameStateBadge.textContent = t('game.state.timer');
+  playSfx('start');
 }
 
 
@@ -743,6 +763,7 @@ function endFruitGame(title, hint) {
   updateHud();
   updateGameOverlay(true, title, `${hint} ${t('overlay.restartBackHint')}`);
   gameStateBadge.textContent = t('game.state.over');
+  playSfx('gameover');
   submitScore(currentGame, fruitState.score);
 }
 
@@ -968,6 +989,7 @@ function sliceFruitTarget(target, now) {
   const popupText = isCombo ? `+${bonus} · ${fruitState.combo} ${t('fruit.combo')}` : `+${bonus}`;
   spawnJuiceBurst(target.x, target.y, target.color, Math.max(18, target.radius * 0.78), 1.18);
   spawnImpactWave(target.x, target.y, target.color, popupText, isCombo);
+  playSfx('slice', fruitState.combo);
   updateHud();
 }
 
@@ -995,6 +1017,7 @@ function triggerFruitSlash(from, to, handKey, now) {
       fruitState.combo = 0;
       spawnJuiceBurst(target.x, target.y, '#fbbf24', 30, 1.45);
       spawnImpactWave(target.x, target.y, '#fbbf24', deducted > 0 ? `BOOM -${deducted}` : 'BOOM');
+      playSfx('bomb');
       fruitState.targets = fruitState.targets.filter((item) => item.id !== target.id);
       updateHud();
       return;
@@ -2104,6 +2127,7 @@ function setLanguage(lang) {
 
   if (paused) updateGameOverlay(true, t('overlay.paused'), t('overlay.pausedHint'));
   syncOverlayButton();
+  syncSoundButton();
 
   if (lastCameraStatus.key) {
     setCameraStatus(lastCameraStatus.key, lastCameraStatus.params);
@@ -2188,6 +2212,11 @@ function setupEvents() {
   helpBtn?.addEventListener('click', openHelp);
   closeHelpBtn?.addEventListener('click', closeHelp);
   helpDoneBtn?.addEventListener('click', closeHelp);
+
+  soundBtn?.addEventListener('click', () => {
+    setSfxEnabled(!sfxEnabled());
+    syncSoundButton();
+  });
   // 点遮罩空白处也关闭
   helpDialog?.addEventListener('click', (event) => {
     if (event.target === helpDialog) closeHelp();
@@ -2278,6 +2307,8 @@ async function bootstrap() {
   initLanguage();
   updateLangButton();
   markHelpHint();
+  initSfx();
+  syncSoundButton();
   initMessageBoard();
   initLeaderboard();
   initReviewBoard();
