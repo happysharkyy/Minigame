@@ -65,6 +65,9 @@ const scrollTo = scrollIndex !== -1 ? args[scrollIndex + 1] : null;
 // --open "details": 截图前展开所有匹配元素(用来检查折叠内容)
 const openIndex = args.indexOf('--open');
 const openSelector = openIndex !== -1 ? args[openIndex + 1] : null;
+// --click "#mainStartBtn": 截图与测量前先点一下, 用来检查"游戏进行中"这类状态的布局
+const clickIndex = args.indexOf('--click');
+const clickSelector = clickIndex !== -1 ? args[clickIndex + 1] : null;
 
 let viewport;
 if (PRESETS[presetName]) {
@@ -196,6 +199,16 @@ await loaded;
 await delay(4500);
 
 // ── 量布局 ──────────────────────────────────
+// 先点一下(如果要求), 让测量拿到的就是点击后的状态
+if (clickSelector) {
+  const clicked = await send('Runtime.evaluate', {
+    expression: `(() => { const el = document.querySelector(${JSON.stringify(clickSelector)}); if (!el) return 'NOT_FOUND'; el.click(); return 'clicked'; })()`,
+    returnByValue: true,
+  }, sessionId);
+  console.log(`--click ${clickSelector}: ${clicked.result?.value}`);
+  await delay(800);
+}
+
 const METRICS = `(() => {
   const box = (sel) => {
     const el = document.querySelector(sel);
@@ -296,7 +309,8 @@ const shot = await send('Page.captureScreenshot', {
   ...(clip ? { clip } : {}),
 }, sessionId);
 
-const fileName = `${presetName}${isFull ? '-full' : scrollTo ? '-scrolled' : ''}.png`;
+const suffix = isFull ? '-full' : [scrollTo && 'scrolled', clickSelector && 'clicked', openSelector && 'open'].filter(Boolean).map((x) => '-' + x).join('');
+const fileName = `${presetName}${suffix}.png`;
 const outFile = path.join(outDir, fileName);
 fs.writeFileSync(outFile, Buffer.from(shot.data, 'base64'));
 
@@ -310,4 +324,45 @@ console.log('布局:', JSON.stringify(metrics, null, 1));
 if (extra !== null && extra !== undefined) console.log('--eval 结果:', JSON.stringify(extra));
 console.log(`横向溢出元素 (${overflowing.length}):`, overflowing.length ? JSON.stringify(overflowing, null, 1) : '无');
 console.log(`截图 -> ${path.relative(root, outFile)} (${(fs.statSync(outFile).size / 1024).toFixed(1)} KB)`);
+
+// ── 可回归的布局断言 ────────────────────────
+// 这几条都是实际踩过的坑: 横向溢出、移动端棋牌被挤出首屏、摄像头浮层盖住正文。
+if (args.includes('--assert')) {
+  const portraitPhone = viewport.mobile && viewport.h > viewport.w;
+  const RULES = [
+    {
+      name: '没有横向溢出',
+      test: () => !metrics.horizontalOverflow && overflowing.length === 0,
+      hint: '页面比视口宽, 用户会看到横向滚动条或被裁切的内容',
+    },
+    {
+      name: '手机端摄像头默认收成 48px 状态点(不遮挡正文)',
+      test: () => !viewport.mobile || clickSelector || (metrics.cameraPanel?.w === 48 && metrics.cameraPanel?.h === 48),
+      hint: '摄像头浮层又变成常驻大窗了, 会盖住正文',
+    },
+    {
+      name: '竖屏手机: 棋盘+分数+按钮完整落在首屏内',
+      test: () => !portraitPhone || metrics.gamePanel.y + metrics.gamePanel.h <= metrics.innerH + 1,
+      hint: '游戏面板比一屏还高, 玩的时候看不到自己的分数',
+    },
+    {
+      name: '桌面端摄像头是右列普通面板, 不是浮层',
+      test: () => viewport.mobile || metrics.cameraPosition === 'relative',
+      hint: '桌面端摄像头变成了 fixed 浮层',
+    },
+  ];
+
+  let failedRules = 0;
+  console.log('--- 布局断言 ---');
+  for (const rule of RULES) {
+    const ok = rule.test();
+    console.log(`${ok ? '✓' : '✗'} ${rule.name}`);
+    if (!ok) {
+      console.error(`    ${rule.hint}`);
+      failedRules += 1;
+    }
+  }
+  process.exit(failedRules === 0 ? 0 : 1);
+}
+
 process.exit(0);

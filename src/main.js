@@ -500,6 +500,7 @@ function initCameraDock() {
   const toggle = () => {
     camPanel.classList.toggle('expanded');
     syncLabel();
+    resizePoseCanvas(); // 面板一展开/收起, 摄像头画面尺寸就变了
   };
   dockBtn.addEventListener('click', (event) => {
     event.stopPropagation();
@@ -704,6 +705,7 @@ function spawnPiece() {
     tetrisState.gameOver = true;
     updateGameOverlay(true, t('overlay.gameOver'), t('overlay.retryHint'));
     gameStateBadge.textContent = t('game.state.over');
+    setPlayingState(false);
     showRoundResult(currentGame, tetrisState.score);
     submitScore(currentGame, tetrisState.score);
   }
@@ -820,6 +822,7 @@ function startTetrisGame() {
   tetrisState.lastDropAt = now();
   updateGameOverlay(false);
   gameStateBadge.textContent = t('game.state.playing');
+  setPlayingState(true);
   playSfx('start');
 }
 
@@ -927,6 +930,7 @@ function startFruitGame() {
   updateHud();
   updateGameOverlay(false);
   gameStateBadge.textContent = t('game.state.timer');
+  setPlayingState(true);
   playSfx('start');
 }
 
@@ -938,6 +942,7 @@ function endFruitGame(title, hint) {
   updateHud();
   updateGameOverlay(true, title, `${hint} ${t('overlay.retryHint')}`);
   gameStateBadge.textContent = t('game.state.over');
+  setPlayingState(false);
   showRoundResult(currentGame, fruitState.score);
   submitScore(currentGame, fruitState.score);
 }
@@ -1767,6 +1772,13 @@ function setPaused(value) {
   syncOverlayButton();
 }
 
+// 手机端摄像头小窗的展开时机: 只在游戏中展开成预览, 其余时候收成一个状态点。
+// 尺寸变了要重算姿态画布, 否则骨架会按旧尺寸绘制、被 CSS 拉伸。
+function setPlayingState(playing) {
+  document.body.classList.toggle('is-playing', playing);
+  resizePoseCanvas();
+}
+
 // 主按钮统一入口: 暂停中 → 继续; 已结束 → 直接再来一局; 否则开始
 function primaryAction() {
   if (paused) {
@@ -1867,6 +1879,7 @@ function resetCurrentGame() {
   if (paused) setPaused(false);
   startPoseSince = 0;
   lastRoundResult = null;
+  setPlayingState(false);
   if (currentGame === GAME_MODES.TETRIS) {
     resetTetrisGame();
   } else {

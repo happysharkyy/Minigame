@@ -1124,17 +1124,20 @@ button:active { transform: translateY(1px); }
   .coach-column { grid-template-columns: 1fr 1fr; }
   .guide-panel { order: -1; }
 
-  /* 摄像头小窗(固定浮动) */
+  /* 摄像头面板: 默认收成一个 48px 的圆形状态点, 只有开始游戏后才展开成预览。
+     原来它是常驻的固定浮层, 会一直浮在正文之上 —— 滚到常见问题一节时正好盖住第一条的
+     说明文字。摄像头预览本质是"游戏中的 HUD": 玩的时候必须看得见自己, 读页面时不该挡路。 */
   .camera-panel {
     position: fixed;
     top: calc(68px + env(safe-area-inset-top, 0px));
     right: 12px;
     z-index: 45;
-    width: 150px;
+    width: 48px;
+    height: 48px;
     padding: 0;
     overflow: hidden;
-    border-radius: 16px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, .55);
+    border-radius: 50%;
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .5);
     cursor: pointer;
     animation: cam-in 320ms ease both;
   }
@@ -1148,25 +1151,42 @@ button:active { transform: translateY(1px); }
   .camera-panel .tracking-summary,
   .camera-panel .safe-frame { display: none; }
 
-  .camera-panel .camera-stage {
-    margin-top: 0;
-    border: 0;
-    border-radius: 0;
+  /* 收起时只留状态灯: 不渲染画面堆栈, 也不占版面 */
+  .camera-panel .camera-stage { display: none; }
+  .camera-panel .camera-dock-btn { display: none; }
+
+  .camera-dot {
+    display: block;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    right: auto;
+    bottom: auto;
+    width: 11px;
+    height: 11px;
+    transform: translate(-50%, -50%);
   }
 
-  .camera-dot { display: block; }
-  .camera-dock-btn { display: grid; }
+  /* 游戏中: 展开成预览。玩的时候必须能看见自己是否入镜 */
+  body.is-playing .camera-panel { width: 150px; height: auto; border-radius: 16px; }
+  body.is-playing .camera-panel .camera-stage { display: block; margin-top: 0; border: 0; border-radius: 0; }
+  body.is-playing .camera-panel .camera-dot { top: auto; left: 8px; bottom: 8px; width: 9px; height: 9px; transform: none; }
+  body.is-playing .camera-panel .camera-dock-btn { display: grid; }
 
-  /* 展开态:显示完整镜头信息 */
+  /* 手动展开态: 显示完整镜头信息(点小窗或状态点进入) */
   .camera-panel.expanded {
     width: min(88vw, 360px);
+    height: auto;
+    border-radius: 16px;
     cursor: default;
     padding: 4px;
   }
   .camera-panel.expanded .compact-heading { display: flex; padding: 12px 12px 0; }
   .camera-panel.expanded .tracking-summary { display: block; margin-top: 10px; padding: 0 12px 12px; }
   .camera-panel.expanded .safe-frame { display: block; }
-  .camera-panel.expanded .camera-stage { margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; }
+  .camera-panel.expanded .camera-stage { display: block; margin-top: 10px; border: 1px solid var(--line); border-radius: 12px; }
+  .camera-panel.expanded .camera-dot { top: auto; left: 8px; bottom: 8px; width: 9px; height: 9px; transform: none; }
+  .camera-panel.expanded .camera-dock-btn { display: grid; }
   .camera-panel.expanded .camera-dock-btn svg { transform: rotate(180deg); }
 
   /* 游戏库横向滚动 */
