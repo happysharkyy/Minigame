@@ -5,6 +5,7 @@ import { initLeaderboard, refreshLeaderboard, setActiveGame, submitScore } from 
 import { initReviewBoard, refreshReviewBoard, setReviewGame, hasRated, scrollToReviewForm } from './reviewBoard.js';
 import { computeRoundResult, computeStreak } from './roundResult.js';
 import { updateFaqSchema } from './structuredData.js';
+import { STAR_COMBO_WINDOW_MS, computeStarBonus, resolveCombo } from './starScore.js';
 import { initSfx, isEnabled as sfxEnabled, play as playSfx, setEnabled as setSfxEnabled } from './sfx.js';
 
 const GAME_MODES = {
@@ -106,13 +107,12 @@ const GAME_LIBRARY = [
     priority: 100,
   },
   {
-    // 尚未实现: 没有 mode 就会渲染成不可点的"开发中"卡片。
-    // 之前这两项带着 mode, 点进去实际跑的是切西瓜的代码, 属于骗点击, 已改回诚实状态。
     id: GAME_MODES.STAR,
     titleKey: 'lib.star.title',
     badgeKey: 'lib.star.badge',
     descKey: 'lib.star.desc',
     taglineKey: 'lib.star.tagline',
+    mode: GAME_MODES.STAR,
     priority: 80,
   },
   {
@@ -596,6 +596,7 @@ const lastTetrisGestureAt = {
 
 const tetrisState = createTetrisState();
 const fruitState = createFruitState();
+const starState = createStarState();
 const handState = {
   left: createHandTrack(),
   right: createHandTrack(),
@@ -959,6 +960,19 @@ function clamp(value, min, max) {
 
 function rgbaFromRgb(rgb, alpha) {
   return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
+}
+
+// '#8bf5dc' -> [139, 245, 220], 供 rgbaFromRgb 使用
+function hexToRgb(hex) {
+  const value = String(hex || '').replace('#', '');
+  const full = value.length === 3
+    ? value.split('').map((ch) => ch + ch).join('')
+    : value.padEnd(6, '0').slice(0, 6);
+  return [
+    parseInt(full.slice(0, 2), 16) || 0,
+    parseInt(full.slice(2, 4), 16) || 0,
+    parseInt(full.slice(4, 6), 16) || 0,
+  ];
 }
 
 function createFruitTarget(kind = 'fruit') {
@@ -1596,7 +1610,7 @@ function drawFruitHud() {
   gameCtx.stroke();
   gameCtx.fillStyle = fruitState.timeLeftMs <= 10_000 ? '#fca5a5' : '#f8fafc';
   gameCtx.font = '800 20px Inter';
-  gameCtx.fillText(`${Math.ceil(fruitState.timeLeftMs / 1000)}${t('fruit.countdownSuffix')}`, gameCanvas.width - 42, 43);
+  gameCtx.fillText(`${Math.ceil(fruitState.timeLeftMs / 1000)}${t('stats.secondsSuffix')}`, gameCanvas.width - 42, 43);
   gameCtx.restore();
 
   if (fruitState.combo < 2) return;
@@ -1627,13 +1641,346 @@ function drawFruitGame() {
   drawFruitHud();
 }
 
+// ── 星光接力 ─────────────────────────────────
+// 低强度伸展玩法: 光点左右交替出现, 把任意一只手移进光圈停留片刻即可点亮。
+// 文件顶部那几个常量(STAR_ROUND_DURATION / STAR_HOLD_TIME)早就声明了, 一直没有实现。
+
+const STAR_SPARK_LIFE = 520;
+const STAR_POPUP_LIFE = 700;
+const STAR_SPAWN_DELAY = 340;
+const STAR_RADIUS = 46;
+const STAR_EDGE_PADDING = 72;
+const STAR_TOP_BAND = 0.2; // 光点最靠上的位置: 给抬手留空间, 也避免一直抬手(低强度)
+const STAR_BOTTOM_BAND = 0.84;
+const STAR_COLORS = ['#8bf5dc', '#a99bff', '#ffb86c', '#6ee7ff', '#ffd79a'];
+
+function createStarState() {
+  return {
+    stars: [],
+    sparks: [],
+    popups: [],
+    score: 0,
+    lit: 0,
+    combo: 0,
+    bestCombo: 0,
+    nextSpawnAt: 0,
+    lastTick: 0,
+    lastLitAt: 0,
+    // 左右交替: 让玩家两边都伸一伸, 而不是一直用同一只手
+    side: Math.random() < 0.5 ? -1 : 1,
+    timeLeftMs: STAR_ROUND_DURATION,
+    roundEndsAt: 0,
+    running: false,
+    gameOver: false,
+  };
+}
+
+function resetStarGame() {
+  starState.stars = [];
+  starState.sparks = [];
+  starState.popups = [];
+  starState.score = 0;
+  starState.lit = 0;
+  starState.combo = 0;
+  starState.bestCombo = 0;
+  starState.lastLitAt = 0;
+  starState.timeLeftMs = STAR_ROUND_DURATION;
+  starState.roundEndsAt = 0;
+  starState.nextSpawnAt = now() + 420;
+  starState.lastTick = now();
+  starState.running = false;
+  starState.gameOver = false;
+  updateHud();
+  const starMeta = getLocalizedMeta(GAME_MODES.STAR);
+  updateGameOverlay(true, starMeta.startTitle, starMeta.startHint);
+  gameStateBadge.textContent = t('game.state.ready');
+  gestureValue.textContent = t('stats.waiting');
+}
+
+function startStarGame() {
+  if (starState.running || currentGame !== GAME_MODES.STAR) return;
+  if (starState.gameOver) resetStarGame();
+  const startedAt = now();
+  starState.running = true;
+  starState.gameOver = false;
+  starState.lastTick = startedAt;
+  starState.lastLitAt = 0;
+  starState.timeLeftMs = STAR_ROUND_DURATION;
+  starState.roundEndsAt = startedAt + STAR_ROUND_DURATION;
+  starState.nextSpawnAt = startedAt + 420;
+  starState.stars = [];
+  starState.sparks = [];
+  starState.popups = [];
+  updateHud();
+  updateGameOverlay(false);
+  gameStateBadge.textContent = t('game.state.timer');
+  setPlayingState(true);
+  playSfx('start');
+}
+
+function endStarGame(title, hint) {
+  starState.running = false;
+  starState.gameOver = true;
+  starState.combo = 0;
+  updateHud();
+  updateGameOverlay(true, title, `${hint} ${t('overlay.retryHint')}`);
+  gameStateBadge.textContent = t('game.state.over');
+  setPlayingState(false);
+  showRoundResult(currentGame, starState.score);
+  submitScore(currentGame, starState.score);
+}
+
+// 光点在左右两侧交替出现, 纵向落在抬手够得着的区域
+function spawnStar(nowMs) {
+  starState.side *= -1;
+  const width = gameCanvas.width;
+  const height = gameCanvas.height;
+  const half = width / 2;
+  const margin = STAR_EDGE_PADDING;
+  const x = starState.side < 0
+    ? randomBetween(margin, half - margin / 2)
+    : randomBetween(half + margin / 2, width - margin);
+
+  starState.stars.push({
+    id: (targetId += 1),
+    x,
+    y: randomBetween(height * STAR_TOP_BAND, height * STAR_BOTTOM_BAND),
+    radius: STAR_RADIUS,
+    color: STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)],
+    holdMs: 0,
+    bornAt: nowMs,
+    pulseOffset: randomBetween(0, Math.PI * 2),
+  });
+}
+
+function lightStar(target, nowMs) {
+  // 连击窗口的判断逻辑抽在 starScore.js 里(有单测): 隔太久就算断连击
+  starState.combo = resolveCombo({
+    combo: starState.combo,
+    sinceLastLitMs: starState.lastLitAt ? nowMs - starState.lastLitAt : null,
+  });
+  starState.lastLitAt = nowMs;
+  starState.bestCombo = Math.max(starState.bestCombo, starState.combo);
+
+  const bonus = computeStarBonus(starState.combo);
+  starState.score += bonus;
+  starState.lit += 1;
+
+  for (let i = 0; i < 14; i += 1) {
+    const angle = (Math.PI * 2 * i) / 14 + randomBetween(-0.2, 0.2);
+    const speed = randomBetween(60, 150);
+    starState.sparks.push({
+      x: target.x,
+      y: target.y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color: target.color,
+      life: STAR_SPARK_LIFE,
+      maxLife: STAR_SPARK_LIFE,
+      radius: randomBetween(2, 4),
+    });
+  }
+
+  const isCombo = starState.combo >= 2;
+  starState.popups.push({
+    x: target.x,
+    y: target.y,
+    text: isCombo ? `+${bonus} · ${tf('star.comboLabel', { n: starState.combo })}` : `+${bonus}`,
+    color: target.color,
+    life: STAR_POPUP_LIFE,
+    maxLife: STAR_POPUP_LIFE,
+    strong: isCombo,
+  });
+
+  playSfx('slice', starState.combo);
+  updateHud();
+}
+
+function updateStarGame(timestamp) {
+  if (!starState.running || starState.gameOver || currentGame !== GAME_MODES.STAR) return;
+  const previousTimeLeftMs = starState.timeLeftMs;
+  const dt = Math.min(34, Math.max(16, timestamp - starState.lastTick)) / 1000;
+  starState.lastTick = timestamp;
+  starState.timeLeftMs = Math.max(0, starState.roundEndsAt - timestamp);
+
+  if (starState.timeLeftMs <= 0) {
+    starState.timeLeftMs = 0;
+    endStarGame(
+      t('overlay.timeUp'),
+      tf('star.result', { lit: starState.lit, combo: starState.bestCombo }),
+    );
+    return;
+  }
+
+  if (Math.ceil(previousTimeLeftMs / 1000) !== Math.ceil(starState.timeLeftMs / 1000)) {
+    updateHud();
+  }
+
+  if (starState.stars.length === 0 && timestamp >= starState.nextSpawnAt) {
+    spawnStar(timestamp);
+  }
+
+  // 任意一只手进入光圈就算在"停留", 离开就清空进度
+  const hands = [handState.left.current, handState.right.current].filter(Boolean);
+  starState.stars.forEach((star) => {
+    const inside = hands.some((hand) => Math.hypot(hand.x - star.x, hand.y - star.y) <= star.radius);
+    star.holdMs = inside ? star.holdMs + dt * 1000 : 0;
+  });
+
+  const ready = starState.stars.find((star) => star.holdMs >= STAR_HOLD_TIME);
+  if (ready) {
+    starState.stars = starState.stars.filter((star) => star.id !== ready.id);
+    lightStar(ready, timestamp);
+    starState.nextSpawnAt = timestamp + STAR_SPAWN_DELAY;
+  }
+
+  starState.sparks = starState.sparks.filter((spark) => {
+    spark.life -= dt * 1000;
+    spark.x += spark.vx * dt;
+    spark.y += spark.vy * dt;
+    spark.vx *= 0.94;
+    spark.vy *= 0.94;
+    return spark.life > 0;
+  });
+  starState.popups = starState.popups.filter((popup) => {
+    popup.life -= dt * 1000;
+    popup.y -= dt * 46;
+    return popup.life > 0;
+  });
+  if (starState.combo && timestamp - starState.lastLitAt > STAR_COMBO_WINDOW_MS) {
+    starState.combo = 0;
+  }
+}
+
+function drawStarBackground() {
+  const width = gameCanvas.width;
+  const height = gameCanvas.height;
+  const gradient = gameCtx.createLinearGradient(0, 0, 0, height);
+  gradient.addColorStop(0, '#070d1b');
+  gradient.addColorStop(0.55, '#080b16');
+  gradient.addColorStop(1, '#060a13');
+  gameCtx.fillStyle = gradient;
+  gameCtx.fillRect(0, 0, width, height);
+
+  // 固定的点缀星, 用 frameStartedAt 做缓慢明暗, 不额外占状态
+  for (let i = 0; i < 26; i += 1) {
+    const x = ((i * 97) % 100) / 100 * width;
+    const y = ((i * 53) % 100) / 100 * height;
+    const twinkle = 0.25 + 0.25 * Math.sin(frameStartedAt * 0.0012 + i);
+    gameCtx.fillStyle = `rgba(190, 210, 255, ${twinkle.toFixed(3)})`;
+    gameCtx.beginPath();
+    gameCtx.arc(x, y, i % 5 === 0 ? 1.6 : 1.1, 0, Math.PI * 2);
+    gameCtx.fill();
+  }
+}
+
+function drawStar(target) {
+  const pulse = 1 + Math.sin(frameStartedAt * 0.004 + target.pulseOffset) * 0.05;
+  const radius = target.radius * pulse;
+  const holdRatio = Math.min(1, target.holdMs / STAR_HOLD_TIME);
+
+  const glow = gameCtx.createRadialGradient(target.x, target.y, 2, target.x, target.y, radius * 1.9);
+  glow.addColorStop(0, rgbaFromRgb(hexToRgb(target.color), 0.5));
+  glow.addColorStop(0.45, rgbaFromRgb(hexToRgb(target.color), 0.16));
+  glow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+  gameCtx.fillStyle = glow;
+  gameCtx.beginPath();
+  gameCtx.arc(target.x, target.y, radius * 1.9, 0, Math.PI * 2);
+  gameCtx.fill();
+
+  gameCtx.strokeStyle = rgbaFromRgb(hexToRgb(target.color), 0.75);
+  gameCtx.lineWidth = 2;
+  gameCtx.beginPath();
+  gameCtx.arc(target.x, target.y, radius, 0, Math.PI * 2);
+  gameCtx.stroke();
+
+  gameCtx.fillStyle = rgbaFromRgb(hexToRgb(target.color), 0.9);
+  gameCtx.beginPath();
+  gameCtx.arc(target.x, target.y, 7, 0, Math.PI * 2);
+  gameCtx.fill();
+
+  // 停留进度: 外圈按比例补上一段弧, 玩家能看出"还差一点"
+  if (holdRatio > 0) {
+    gameCtx.strokeStyle = '#ffffff';
+    gameCtx.lineWidth = 4;
+    gameCtx.lineCap = 'round';
+    gameCtx.beginPath();
+    gameCtx.arc(target.x, target.y, radius + 9, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * holdRatio);
+    gameCtx.stroke();
+    gameCtx.lineCap = 'butt';
+  }
+}
+
+function drawStarGame() {
+  gameCtx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+  drawStarBackground();
+
+  starState.stars.forEach(drawStar);
+
+  starState.sparks.forEach((spark) => {
+    const alpha = Math.max(0, spark.life / spark.maxLife);
+    gameCtx.fillStyle = rgbaFromRgb(hexToRgb(spark.color), alpha);
+    gameCtx.beginPath();
+    gameCtx.arc(spark.x, spark.y, spark.radius * alpha, 0, Math.PI * 2);
+    gameCtx.fill();
+  });
+
+  starState.popups.forEach((popup) => {
+    const alpha = Math.max(0, popup.life / popup.maxLife);
+    gameCtx.globalAlpha = alpha;
+    gameCtx.fillStyle = popup.color;
+    gameCtx.font = popup.strong ? '700 21px system-ui, sans-serif' : '600 17px system-ui, sans-serif';
+    gameCtx.textAlign = 'center';
+    gameCtx.fillText(popup.text, popup.x, popup.y);
+    gameCtx.globalAlpha = 1;
+  });
+
+  drawHandCursor(handState.left, 'rgba(110, 231, 255, 0.88)');
+  drawHandCursor(handState.right, 'rgba(248, 113, 113, 0.88)');
+
+  // HUD: 分数 + 剩余时间条
+  const width = gameCanvas.width;
+  gameCtx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+  gameCtx.fillRect(18, 18, width - 36, 6);
+  const ratio = Math.max(0, starState.timeLeftMs / STAR_ROUND_DURATION);
+  gameCtx.fillStyle = starState.timeLeftMs <= 6000 ? '#ffb86c' : '#8bf5dc';
+  gameCtx.fillRect(18, 18, (width - 36) * ratio, 6);
+
+  gameCtx.fillStyle = 'rgba(247, 249, 252, 0.92)';
+  gameCtx.font = '700 22px system-ui, sans-serif';
+  gameCtx.textAlign = 'left';
+  gameCtx.fillText(String(starState.score), 18, 58);
+  if (starState.combo >= 2) {
+    gameCtx.fillStyle = '#ffb86c';
+    gameCtx.font = '700 14px system-ui, sans-serif';
+    gameCtx.fillText(tf('star.comboLabel', { n: starState.combo }), 18, 78);
+  }
+}
+
+function evaluateStarGestures(landmarks) {
+  const star = starState.stars[0];
+  if (!star) {
+    gestureValue.textContent = t('gesture.starNext');
+    return;
+  }
+  const hands = [handState.left.current, handState.right.current].filter(Boolean);
+  const inside = hands.some((hand) => Math.hypot(hand.x - star.x, hand.y - star.y) <= star.radius);
+  if (!inside) {
+    gestureValue.textContent = t('gesture.starFind');
+    return;
+  }
+  const progress = Math.min(100, Math.round((star.holdMs / STAR_HOLD_TIME) * 100));
+  gestureValue.textContent = tf('gesture.starHold', { n: progress });
+}
+
 
 function getCurrentMeta() {
   return getLocalizedMeta(currentGame);
 }
 
 function getCurrentGameState() {
-  return currentGame === GAME_MODES.TETRIS ? tetrisState : fruitState;
+  if (currentGame === GAME_MODES.TETRIS) return tetrisState;
+  return currentGame === GAME_MODES.STAR ? starState : fruitState;
 }
 
 function isCurrentGameRunning() {
@@ -1815,10 +2162,14 @@ function updateHud() {
     scoreValue.textContent = String(tetrisState.score);
     metricOneValue.textContent = String(tetrisState.lines);
     metricTwoValue.textContent = String(tetrisState.level);
+  } else if (currentGame === GAME_MODES.STAR) {
+    scoreValue.textContent = String(starState.score);
+    metricOneValue.textContent = String(starState.lit);
+    metricTwoValue.textContent = `${Math.ceil(starState.timeLeftMs / 1000)}${t('stats.secondsSuffix')}`;
   } else {
     scoreValue.textContent = String(fruitState.score);
     metricOneValue.textContent = String(fruitState.sliced);
-    metricTwoValue.textContent = `${Math.ceil(fruitState.timeLeftMs / 1000)}${t('fruit.countdownSuffix')}`;
+    metricTwoValue.textContent = `${Math.ceil(fruitState.timeLeftMs / 1000)}${t('stats.secondsSuffix')}`;
   }
 }
 
@@ -1896,6 +2247,8 @@ function resetCurrentGame() {
   setPlayingState(false);
   if (currentGame === GAME_MODES.TETRIS) {
     resetTetrisGame();
+  } else if (currentGame === GAME_MODES.STAR) {
+    resetStarGame();
   } else {
     resetFruitGame();
   }
@@ -1907,6 +2260,8 @@ function startCurrentGame() {
   recordGameUsage(currentGame);
   if (currentGame === GAME_MODES.TETRIS) {
     startTetrisGame();
+  } else if (currentGame === GAME_MODES.STAR) {
+    startStarGame();
   } else {
     startFruitGame();
   }
@@ -1915,6 +2270,8 @@ function startCurrentGame() {
 function drawCurrentGame() {
   if (currentGame === GAME_MODES.TETRIS) {
     drawTetris();
+  } else if (currentGame === GAME_MODES.STAR) {
+    drawStarGame();
   } else {
     drawFruitGame();
   }
@@ -1923,6 +2280,8 @@ function drawCurrentGame() {
 function updateCurrentGame(timestamp) {
   if (currentGame === GAME_MODES.TETRIS) {
     updateTetris(timestamp);
+  } else if (currentGame === GAME_MODES.STAR) {
+    updateStarGame(timestamp);
   } else {
     updateFruitGame(timestamp);
   }
@@ -2240,6 +2599,8 @@ function evaluateGestures(landmarks, now) {
 
   if (currentGame === GAME_MODES.TETRIS) {
     evaluateTetrisGestures(landmarks, now);
+  } else if (currentGame === GAME_MODES.STAR) {
+    evaluateStarGestures(landmarks);
   } else {
     evaluateFruitGestures(landmarks);
   }

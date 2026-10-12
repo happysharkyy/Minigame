@@ -9,7 +9,7 @@ const I18N = {
     // 页面标题 / 品牌
     'app.title': 'MOVE ARCADE · 体感游戏中心',
     'seo.title': 'MOVE ARCADE · 体感游戏中心',
-    'seo.desc': '无需手柄，用摄像头和身体动作游玩体感俄罗斯方块与体感切西瓜，更多玩法开发中。支持 PC 与移动端，中英双语，打开即玩。',
+    'seo.desc': '无需手柄，用摄像头和身体动作游玩体感俄罗斯方块、体感切西瓜与星光接力三款小游戏。支持 PC 与移动端，中英双语，打开即玩。',
     'brand.aria': 'MOVE ARCADE 首页',
     'brand.tagline': '让身体成为手柄',
     'session.status': '正在准备体感空间',
@@ -20,7 +20,7 @@ const I18N = {
 
     // 游戏库
     'lib.heading': '今天想怎么玩？',
-    'lib.playableCount': '2 款可玩',
+    'lib.playableCount': '3 款可玩',
     'lib.intro': '选一款开始玩，游戏之间随时切换；开发中的玩法会标注出来，不会让你点进空壳。',
     'lib.sortLabel': '游戏排序方式',
     'lib.sort.custom': '我的顺序',
@@ -41,7 +41,7 @@ const I18N = {
     'lib.fruit.desc': '快速挥臂切开水果，连续命中加分，注意避开炸弹。',
     'lib.fruit.tagline': '爆发 · 高强度',
     'lib.star.title': '星光接力',
-    'lib.star.badge': '开发中',
+    'lib.star.badge': '舒缓',
     'lib.star.desc': '移动任意一只手进入光点并短暂停留，连续点亮星图。',
     'lib.star.tagline': '伸展 · 低强度',
     'lib.guard.title': '能量守门员',
@@ -119,6 +119,11 @@ const I18N = {
     'gesture.rightSlash': '右手挥切',
     'gesture.quickSlash': '快速挥动双手切水果',
     'gesture.noBody': '未检测到人体',
+    'star.comboLabel': '{n} 连击',
+    'star.result': '点亮 {lit} 个光点，最高 {combo} 连击',
+    'gesture.starHold': '停留中 {n}%',
+    'gesture.starFind': '把任意一只手移入光点',
+    'gesture.starNext': '下一个光点马上出现',
     'gesture.startPose': '开始手势',
     'gesture.start': '游戏开始',
     'gesture.restartPrefix': '重新开始：',
@@ -159,7 +164,7 @@ const I18N = {
 
     // 水果模式画布文字
     'fruit.combo': '连斩',
-    'fruit.countdownSuffix': '秒',
+    'stats.secondsSuffix': '秒',
     'fruit.result': '本局得分 {score}，切开 {sliced} 个水果，最高 {combo} 连斩。',
 
     // 操作按钮
@@ -366,7 +371,7 @@ const I18N = {
     'faq.q4': '动作识别不准、或者手臂容易累怎么办？',
     'faq.a4': '先确认头部、肩膀和手腕都落在画面里的安全框内，再看「识别反馈」确认动作被认到了。如果肩颈不适，把「操作舒适度」的动作幅度切到「轻柔」，小幅动作就会触发；也可以开启「减少动态效果」降低闪光和粒子。',
     'faq.q5': '排行榜是怎么算的？一局多久？',
-    'faq.a5': '每局结束会自动提交分数，排行榜保留每款游戏的前 50 名，页面中部可以切换查看。切西瓜和俄罗斯方块都是单局几分钟的节奏，建议每局 3–5 分钟后换一款低强度玩法，避免长时间高举手臂。',
+    'faq.a5': '每局结束会自动提交分数，排行榜保留每款游戏的前 50 名，页面中部可以切换查看。三款游戏都是单局几分钟的节奏，建议每局 3–5 分钟后换一款低强度玩法，避免长时间高举手臂。',
 
     // 页脚
     'footer.tagline': '用身体重新发现游戏的乐趣',
@@ -377,7 +382,7 @@ const I18N = {
     // Page title / brand
     'app.title': 'MOVE ARCADE · Motion Game Hub',
     'seo.title': 'MOVE ARCADE · Motion Game Hub',
-    'seo.desc': 'Play motion-sensing Tetris and Fruit Ninja using just your webcam and body gestures — no controller needed. More games in development. Works on PC and mobile, bilingual ZH/EN, play instantly.',
+    'seo.desc': 'Play motion-sensing block drop, watermelon slicing and Star Relay using just your webcam and body gestures — no controller needed. Works on PC and mobile, bilingual ZH/EN, play instantly.',
     'brand.aria': 'MOVE ARCADE home',
     'brand.tagline': 'Make your body the controller',
     'session.status': 'Preparing motion space',
@@ -388,7 +393,7 @@ const I18N = {
 
     // Game library
     'lib.heading': 'What do you want to play today?',
-    'lib.playableCount': '2 games playable',
+    'lib.playableCount': '3 games playable',
     'lib.intro': 'Drag game cards to reorder, or let the system recommend based on your recent sessions.',
     'lib.sortLabel': 'Sort games by',
     'lib.sort.custom': 'My order',
@@ -409,7 +414,7 @@ const I18N = {
     'lib.fruit.desc': 'Swipe to slice fruit and chain hits for combo points. Watch out for bombs.',
     'lib.fruit.tagline': 'Explosive · High',
     'lib.star.title': 'Star Relay',
-    'lib.star.badge': 'In development',
+    'lib.star.badge': 'Gentle',
     'lib.star.desc': 'Move either hand into the light dots and hold briefly to light up the star map.',
     'lib.star.tagline': 'Stretch · Low',
     'lib.guard.title': 'Energy Keeper',
@@ -487,6 +492,11 @@ const I18N = {
     'gesture.rightSlash': 'Right swipe',
     'gesture.quickSlash': 'Swipe quickly to slice fruit',
     'gesture.noBody': 'No body detected',
+    'star.comboLabel': '{n} combo',
+    'star.result': 'Lit {lit} light dots · best combo {combo}',
+    'gesture.starHold': 'Holding {n}%',
+    'gesture.starFind': 'Move either hand into the light dot',
+    'gesture.starNext': 'Next light dot appearing shortly',
     'gesture.startPose': 'Start pose',
     'gesture.start': 'Game on!',
     'gesture.restartPrefix': 'Restart: ',
@@ -527,7 +537,7 @@ const I18N = {
 
     // Fruit-mode canvas text
     'fruit.combo': 'Combo',
-    'fruit.countdownSuffix': 's',
+    'stats.secondsSuffix': 's',
     'fruit.result': 'Score {score} · {sliced} fruits sliced · best combo {combo}.',
 
     // Action buttons

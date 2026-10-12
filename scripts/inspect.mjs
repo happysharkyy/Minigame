@@ -154,6 +154,11 @@ const child = spawn(browser, [
   '--headless=new', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
   `--user-data-dir=${profile}`, `--remote-debugging-port=${CDP_PORT}`,
   '--window-size=1200,900', '--hide-scrollbars',
+  // 无头浏览器会把后台页面降频/停掉 rAF, 游戏循环就停了(表现为倒计时卡住)。
+  // 这几个开关 + 后面的 setFocusEmulationEnabled 一起保证页面一直被当成前台。
+  '--disable-background-timer-throttling',
+  '--disable-backgrounding-occluded-windows',
+  '--disable-renderer-backgrounding',
   '--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream',
   'about:blank',
 ]);
@@ -213,6 +218,8 @@ function once(method, sessionId) {
 const { targetId } = await send('Target.createTarget', { url: 'about:blank' });
 const { sessionId } = await send('Target.attachToTarget', { targetId, flatten: true });
 await send('Page.enable', {}, sessionId);
+// 让页面始终被视为聚焦, 否则 requestAnimationFrame 会在几秒后被降频, 依赖时间的探针全部失效
+await send('Emulation.setFocusEmulationEnabled', { enabled: true }, sessionId);
 await send('Runtime.enable', {}, sessionId);
 await send('Emulation.setDeviceMetricsOverride', {
   width: viewport.w,

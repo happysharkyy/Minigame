@@ -122,14 +122,14 @@ const CHECKS = [
     detail: 'catalog-card 不是 7 张 —— 说明 main.js 在 bootstrap 之前就抛异常了',
   },
   {
-    name: '可玩数量文案已更新为 2 款',
-    test: (dom) => dom.includes('2 款可玩') || dom.includes('2 games playable'),
-    detail: '仍然是 4 款可玩, 说明 i18n 没生效或静态文案没改',
+    name: '可玩数量文案与实际实现一致(3 款)',
+    test: (dom) => dom.includes('3 款可玩') || dom.includes('3 games playable'),
+    detail: '计数与已实现的玩法数对不上(目前是俄罗斯方块/切西瓜/星光接力)',
   },
   {
-    name: '未实现的 5 款玩法渲染为不可点卡片',
-    test: (dom) => (dom.match(/class="catalog-card coming[" ]/g) || []).length === 5,
-    detail: 'coming 卡片不是 5 张(星光接力/能量守门员/节奏击打/光墙闪避/体感拳击)',
+    name: '未实现的 4 款玩法渲染为不可点卡片',
+    test: (dom) => (dom.match(/class="catalog-card coming[" ]/g) || []).length === 4,
+    detail: 'coming 卡片不是 4 张(能量守门员/节奏击打/光墙闪避/体感拳击)',
   },
   {
     name: '评价面板的星星由 JS 生成',
@@ -142,9 +142,9 @@ const CHECKS = [
     detail: 'mainStartBtn 文案不对',
   },
   {
-    name: '排行榜只保留已实现的 2 个标签',
-    test: (dom) => (dom.match(/class="lb-tab[" ]/g) || []).length === 2,
-    detail: 'lb-tab 数量不是 2',
+    name: '排行榜标签只覆盖已实现的玩法(3 个)',
+    test: (dom) => (dom.match(/class="lb-tab[" ]/g) || []).length === 3,
+    detail: 'lb-tab 数量不是 3',
   },
   {
     name: '声音按钮文案由 JS 接管(不再是写死的"声音 开")',

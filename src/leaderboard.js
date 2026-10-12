@@ -2,10 +2,11 @@
 import { getLang, t, tf } from './i18n.js';
 
 const NAME_KEY = 'move-arcade-msg-name';
-// 只保留真正实现了玩法的游戏 —— 星光接力/能量守门员还没做, 放上来只会点进去发现是同款
+// 只保留真正实现了玩法的游戏 —— 能量守门员还没做, 放上来只会点进去发现是同款
 const GAME_TABS = [
   { id: 'tetris', titleKey: 'lib.tetris.title' },
   { id: 'fruit', titleKey: 'lib.fruit.title' },
+  { id: 'star', titleKey: 'lib.star.title' },
 ];
 
 let els = null;
